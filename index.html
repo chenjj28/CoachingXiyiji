@@ -407,6 +407,10 @@
           </div>
 
           <div id="grpSup" class="hidden">
+            <div class="field" data-coach>
+              <label>教练客户 <span class="hint">（受督导者当时所带客户，如 亢亢 / 暖暖 / 晨晨 / 玉雪）</span></label>
+              <input type="text" id="fSupClient" placeholder="受督导教练本次对话服务的客户 ID" maxlength="40">
+            </div>
             <div class="field">
               <label>督导后反馈 <span class="hint">（教练与客户都可填写 / 修改——这是督导后的共同反馈）</span></label>
               <textarea id="fSupFeedback" placeholder="督导后，客户或教练的反馈、触动、下一步……"></textarea>
@@ -736,11 +740,12 @@ function renderTimeline(){
     const sup=(s.type||"coach")==="supervise";
     const typeBadge='<span class="tl-type '+(sup?"supervise":"coach")+'">'+TYPE_LABEL[s.type||"coach"]+'</span>';
     const cidTag=(IS_COACH()&&CUR_CLIENT==="all"&&s.client_id)?'<span class="tl-cid">'+esc(s.client_id)+'</span>':'';
-    const title=sup?(s.s_focus||""):(s.topic||"");
+    const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"");
     const tags=(s.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("");
     let bodyRows="";
     if(sup){
       bodyRows+='<div class="tl-row"><span class="lab">督导后反馈</span><span class="val">'+(s.s_feedback?nl2br(s.s_feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      if(s.sup_client)bodyRows+='<div class="tl-row"><span class="lab">教练客户</span><span class="val">'+esc(s.sup_client)+'</span></div>';
     }else{
       bodyRows+='<div class="tl-row"><span class="lab">觉察收获</span><span class="val">'+(s.feedback?nl2br(s.feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
       if(s.eval)bodyRows+='<div class="tl-row"><span class="lab">教练反馈</span><span class="val">'+nl2br(s.eval)+'</span></div>';
@@ -925,7 +930,7 @@ function editSession(id){
     toggleNewClient();
     $("#fFollow").value=s.follow||"";
     $("#fPlan").value=s.plan||"";
-    if(sup){$("#fSupFeedback").value=s.s_feedback||"";}
+    if(sup){$("#fSupFeedback").value=s.s_feedback||"";$("#fSupClient").value=s.sup_client||"";}
     else{
       $("#fTopic").value=s.topic||"";
       $("#fFeedback").value=s.feedback||"";
@@ -982,6 +987,7 @@ $("#sessionForm").addEventListener('submit',async e=>{
   };
   if(isSup){
     rec.s_feedback=$("#fSupFeedback").value.trim();
+    rec.sup_client=$("#fSupClient").value.trim();
   }else{
     rec.topic=$("#fTopic").value.trim();
     rec.feedback=$("#fFeedback").value.trim();
@@ -1039,7 +1045,7 @@ $("#fileInput").addEventListener('change',async e=>{
         type:x.type||"coach",
         topic:x.topic||"",feedback:x.feedback||"",eval:x.eval||"",tags:x.tags||[],
         action:x.action||"",action_block:x.action_block||"",testimonial:x.testimonial||"",
-        s_focus:x.s_focus||"",s_feedback:x.s_feedback||"",
+        s_focus:x.s_focus||"",s_feedback:x.s_feedback||"",sup_client:x.sup_client||"",
         follow:x.follow||"",plan:x.plan||null,action_done:!!x.action_done
       }));
       if(rows.length===0)throw 0;
