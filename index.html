@@ -7,15 +7,16 @@
 <style>
   :root{
     --bg:#F4F1EA;
-    --surface:#F8FAF8;
+    --surface:#FBFAF7;
     --brand:#27456C;
     --brand2:#3A587B;
-    --water:#BFD9D5;
     --mist:#D5DEE5;
     --accent:#C96F4A;
     --ink:#202322;
     --muted:#5f6b78;
     --line:#E2E0D8;
+    --tint-brand:#EAF1F7;
+    --tint-accent:#FBF1EA;
     --red:#C0392B;
     --radius:16px;
     --shadow:0 1px 3px rgba(39,69,108,.06),0 6px 20px rgba(39,69,108,.05);
@@ -36,7 +37,7 @@
   .nav-btn{display:flex;align-items:center;gap:11px;border:none;background:transparent;color:var(--brand2);font-size:15px;font-family:var(--font);padding:12px 12px;border-radius:12px;cursor:pointer;text-align:left;min-height:44px;width:100%;transition:background .15s,color .15s}
   .nav-btn svg{width:20px;height:20px;flex-shrink:0}
   .nav-btn:hover{background:var(--mist)}
-  .nav-btn.active{background:var(--water);color:var(--brand);font-weight:600}
+  .nav-btn.active{background:var(--tint-brand);color:var(--brand);font-weight:600}
   .side-foot{margin-top:auto;font-size:11px;color:var(--muted);padding:8px;line-height:1.5}
 
   /* ---------- Main ---------- */
@@ -46,7 +47,7 @@
   .topbar h1{font-size:19px;margin:0;color:var(--brand);font-weight:700;flex:1;min-width:160px}
   .topbar h1 small{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:2px}
   .tools{display:flex;gap:8px;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);color:var(--brand2);font-family:var(--font);font-size:14px;padding:0 14px;min-height:44px;border-radius:11px;cursor:pointer;transition:background .15s,border-color .15s,transform .05s}
+  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;color:var(--brand2);font-family:var(--font);font-size:14px;padding:0 14px;min-height:44px;border-radius:11px;cursor:pointer;transition:background .15s,border-color .15s,transform .05s}
   .btn:hover{background:var(--mist)}
   .btn:active{transform:scale(.97)}
   .btn svg{width:17px;height:17px}
@@ -61,27 +62,28 @@
   .wrap{padding:20px 22px 0;display:flex;flex-direction:column;gap:18px}
 
   /* ---------- Today ---------- */
-  .today{background:linear-gradient(135deg,#27456C 0%,#3A587B 100%);color:#fff;border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
-  .today .th{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:12px}
+  .today{background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:var(--radius);padding:16px 18px 14px}
+  .today .th{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin-bottom:10px;color:var(--brand)}
   .today .th svg{width:19px;height:19px}
-  .today .th .pill{margin-left:auto;font-size:11px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;font-weight:500}
-  .td-item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;color:var(--ink)}
+  .today .th .pill{margin-left:auto;font-size:11px;background:var(--tint-accent);color:var(--accent);padding:3px 10px;border-radius:20px;font-weight:600}
+  .td-item{background:transparent;border:none;border-top:1px solid var(--line);border-radius:0;padding:11px 0;display:flex;align-items:flex-start;gap:12px;color:var(--ink)}
+  .td-item:first-of-type{border-top:none;padding-top:2px}
   .td-item:last-child{margin-bottom:0}
-  .td-item.over{border:1px solid var(--red);border-left:4px solid var(--red)}
-  .td-item .ic{width:30px;height:30px;border-radius:9px;background:var(--water);color:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .td-item.over{background:var(--tint-accent);border-left:4px solid var(--red);padding-left:12px;border-radius:8px}
+  .td-item .ic{width:30px;height:30px;border-radius:9px;background:transparent;color:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .td-item .ic svg{width:17px;height:17px}
   .td-item .body{flex:1;min-width:0}
   .td-item .body .t{font-weight:600;font-size:14px;color:var(--brand)}
   .td-item .body .d{font-size:12.5px;color:var(--ink);opacity:.9;margin-top:3px}
   .td-item .body .meta{font-size:12px;color:var(--muted);margin-top:4px}
   .td-item .body .cid{font-size:11px;color:var(--accent);margin-top:3px;font-weight:600}
-  .td-item .act{flex-shrink:0}
-  .td-item .act .btn{min-height:38px;padding:0 13px;font-size:13px;background:var(--brand);color:#fff;border:none}
-  .td-item .act .btn:hover{background:#1d3453}
+  .td-item .act{flex-shrink:0;display:flex;flex-direction:column;gap:5px;align-items:stretch;width:84px}
+  .td-item .act .btn{min-height:32px;padding:0 9px;font-size:12px;width:100%;justify-content:center}
+  .td-item .act .btn:hover{background:var(--mist)}
   .today .empty{font-size:13.5px;opacity:.85;line-height:1.7}
 
   /* ---------- Card ---------- */
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
   .card h2{font-size:17px;margin:0 0 4px;color:var(--brand);display:flex;align-items:center;gap:9px}
   .card h2 svg{width:20px;height:20px;color:var(--brand2)}
   .card .sub{font-size:13px;color:var(--muted);margin:0 0 16px}
@@ -92,40 +94,71 @@
   .filters button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
   .date-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
   .date-nav .dn-label{font-size:13px;color:var(--muted)}
-  .date-nav select{font-family:var(--font);font-size:14px;color:var(--brand2);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:42px;cursor:pointer}
-  .date-nav .dn-clear{font-size:13px;color:var(--accent);background:transparent;border:none;cursor:pointer;min-height:42px;padding:0 6px}
+  .date-nav .dn-clear{font-size:13px;color:var(--accent);background:transparent;border:none;cursor:pointer;min-height:34px;padding:0 6px}
   .date-nav .dn-count{margin-left:auto;font-size:12.5px;color:var(--muted)}
+  .mh{flex:1 1 100%;margin-top:2px}
+  .mh-inner{display:flex;flex-direction:column;gap:6px}
+  .mh-row{display:flex;align-items:center;gap:8px}
+  .mh-yr{font-size:13px;font-weight:700;color:var(--brand2);width:36px;flex-shrink:0;text-align:right}
+  .mh-cells{display:flex;gap:5px;flex:1;min-width:0}
+  .mh-cell{flex:1;min-width:0;min-height:36px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font);transition:border-color .12s,background .12s}
+  .mh-cell .mn{font-size:11px;color:var(--muted);line-height:1.15}
+  .mh-cell .mc{font-size:12.5px;font-weight:700;color:var(--brand);line-height:1.15}
+  .mh-cell.lvl1{background:#DCE7F1;border-color:#DCE7F1}
+  .mh-cell.lvl2{background:#AFC4DA;border-color:#AFC4DA}
+  .mh-cell.lvl3{background:var(--brand);border-color:var(--brand)}
+  .mh-cell.lvl3 .mn,.mh-cell.lvl3 .mc{color:#fff}
+  .mh-cell.sel{outline:2px solid var(--accent);outline-offset:1px}
+  .mh-cell:hover{border-color:var(--brand)}
+  .mh-legend{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:11px;color:var(--muted)}
+  .mh-legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+  .mh-legend .s0{background:#E8E5DD}
+  .mh-legend .s1{background:#DCE7F1}
+  .mh-legend .s2{background:#AFC4DA}
+  .mh-legend .s3{background:var(--brand)}
 
   /* ---------- Timeline ---------- */
   .timeline{position:relative;padding-left:26px;margin-top:6px}
-  .timeline:before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--water)}
+  .timeline:before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--mist)}
   .tl-item{position:relative;margin-bottom:20px}
   .tl-item:last-child{margin-bottom:0}
   .tl-item:before{content:"";position:absolute;left:-22px;top:20px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--brand);box-shadow:0 0 0 3px var(--bg)}
   .tl-item.sup:before{border-color:var(--accent)}
-  .tl-card{border:1px solid var(--line);border-radius:14px;padding:15px 16px;background:var(--surface)}
-  .tl-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-  .tl-date{font-size:12.5px;font-weight:600;color:var(--brand);background:var(--water);padding:3px 11px;border-radius:20px}
-  .tl-type{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px}
-  .tl-type.coach{color:var(--brand);background:var(--water)}
-  .tl-type.supervise{color:#fff;background:var(--accent)}
-  .tl-cid{font-size:11px;font-weight:700;color:var(--accent);background:#fbeee7;padding:2px 9px;border-radius:20px}
-  .tl-topic{font-size:16px;font-weight:700;color:var(--ink);flex:1;min-width:140px}
+  .tl-card{border:1px solid var(--line);border-radius:14px;padding:15px 16px;background:#fff}
+  .tl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .tl-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tl-date{font-size:13.5px;font-weight:600;color:var(--brand);background:var(--tint-brand);padding:4px 12px;border-radius:20px;line-height:1.4;white-space:nowrap}
+  .tl-type{font-size:13.5px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid;line-height:1.4;white-space:nowrap}
+  .tl-type.coach{color:#fff;background:var(--brand);border-color:var(--brand)}
+  .tl-type.supervise{color:#fff;background:var(--accent);border-color:var(--accent)}
+  .tl-cid{font-size:12px;font-weight:600;color:var(--muted)}
+  .tl-topic{font-size:16px;font-weight:700;color:var(--ink);flex:1;min-width:140px;align-self:center}
   .tl-row{display:flex;gap:9px;margin:9px 0;align-items:flex-start}
-  .tl-row .lab{font-size:12px;font-weight:700;color:var(--brand2);background:var(--mist);padding:3px 9px;border-radius:7px;flex-shrink:0;min-width:60px;text-align:center}
+  .tl-row .lab{font-size:14.5px;font-weight:700;color:var(--brand2);flex-shrink:0;min-width:60px}
   .tl-row .val{font-size:14.5px;color:var(--ink);flex:1;min-width:0}
-  .tl-row .fb-edit{flex-shrink:0;margin-left:auto}
   .tl-row textarea{width:100%;font-size:15px;margin-top:4px}
-  .tags{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 2px}
-  .tag{font-size:12.5px;color:var(--accent);background:#fbeee7;padding:3px 11px;border-radius:20px;font-weight:600}
-  .mood{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--muted)}
-  .mood .dot{width:11px;height:11px;border-radius:50%;background:var(--mist)}
-  .mood .dot.on{background:var(--accent)}
-  .follow{margin-top:11px;padding:11px 13px;border-radius:11px;background:var(--mist);font-size:13.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .follow.done{background:#e6f0ec;color:var(--brand)}
-  .follow.pending{background:#fbeae7;color:var(--accent)}
-  .follow .ft{font-weight:700;color:var(--brand2)}
+  .btn.sm.act-toggle{margin-left:auto;flex-shrink:0;padding:0 13px;min-height:34px;font-size:13px}
+  .tl-row .lab.muted{color:var(--muted);font-weight:600}
+  .tl-row.sub{margin-left:14px;padding-left:12px;border-left:2px solid var(--line)}
+  .act-row.done .lab{color:#2f7d5b}
+  .act-row.pending .lab{color:var(--accent)}
+  #sessionForm.client-mode [data-coach]{display:none}
+  .ph{color:var(--muted);font-style:italic;opacity:.75}
+  .follow .val{flex:1;min-width:0}
+  .follow.block,.follow.testimonial{align-items:flex-start}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0;padding-top:11px;border-top:1px solid var(--line)}
+  .tag{font-size:12.5px;color:var(--accent);background:transparent;border:1px solid #F0D9C0;padding:3px 11px;border-radius:20px;font-weight:600}
+  .follow{margin-top:11px;padding:11px 13px;border-radius:11px;background:transparent;border-left:3px solid var(--brand);font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--ink)}
+  .follow.done{border-left-color:#3a8f6f;color:#2f7d5b}
+  .follow.pending{border-left-color:var(--accent);color:var(--accent)}
+  .follow .ft{font-size:14px;font-weight:700;color:var(--brand2);flex-shrink:0}
   .follow .pd{margin-left:auto;font-size:12px;opacity:.8}
+  .follow.block{background:transparent;border:1px dashed var(--line);border-left:3px dashed var(--muted);color:var(--muted);margin-top:6px}
+  .follow.block .ft{color:var(--muted)}
+  .follow.coach-note{background:transparent;border:1px dashed var(--line);border-left:3px dashed var(--brand2);color:var(--muted)}
+  .follow.coach-note .ft{color:var(--brand2)}
+  .follow.testimonial{background:var(--tint-accent);border:1px solid #F0D9C0;border-left:3px solid var(--accent);color:var(--accent)}
+  .follow.testimonial .ft{color:var(--accent)}
   .tl-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .empty-state{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
   .empty-state .big{font-size:15px;color:var(--brand2);font-weight:600;margin-bottom:6px}
@@ -138,33 +171,29 @@
   textarea{resize:vertical;min-height:74px;line-height:1.55}
   input:focus,textarea:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(39,69,108,.12)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .mood-pick{display:flex;gap:8px}
-  .mood-pick button{width:46px;height:46px;border-radius:11px;border:1px solid var(--line);background:var(--bg);font-size:16px;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--font)}
-  .mood-pick button.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .seg{display:flex;gap:8px;flex-wrap:wrap}
   .seg button{flex:1;min-width:120px;min-height:46px;border:1px solid var(--line);background:var(--bg);border-radius:11px;font-size:15px;color:var(--brand2);cursor:pointer;font-family:var(--font);font-weight:600}
   .seg button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
   .form-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
 
   /* ---------- Overview ---------- */
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px}
-  .stat{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px 15px;text-align:center}
-  .stat .n{font-size:26px;font-weight:800;color:var(--brand);line-height:1.1}
-  .stat .l{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:10px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 12px;text-align:center}
+  .stat .n{font-size:21px;font-weight:800;color:var(--brand);line-height:1.15;white-space:nowrap}
+  .stat .n .unit{font-size:13px;font-weight:600;margin-left:3px;color:var(--muted)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:4px}
   .dist{font-size:13px;color:var(--brand2);margin:0 0 6px;font-weight:600}
   .dist .sup{color:var(--accent)}
   .ov-block{margin-top:6px}
   .ov-block .ttl{font-size:14px;font-weight:700;color:var(--brand2);margin:16px 0 10px;display:flex;align-items:center;gap:8px}
   .ov-block .ttl svg{width:17px;height:17px}
-  .chart-wrap{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px}
+  .chart-wrap{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px}
   .chart-wrap svg{width:100%;height:auto;display:block}
-  .bar-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13.5px}
-  .bar-row .name{width:96px;flex-shrink:0;color:var(--ink);text-align:right}
-  .bar-row .track{flex:1;height:14px;background:var(--mist);border-radius:8px;overflow:hidden}
-  .bar-row .fill{height:100%;background:linear-gradient(90deg,var(--water),var(--brand));border-radius:8px}
-  .bar-row .cnt{width:30px;color:var(--muted);font-size:12px}
+  .kw-wrap{display:flex;flex-wrap:wrap;gap:8px}
+  .kw{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);border:1px solid #F0D9C0;background:transparent;padding:4px 12px;border-radius:20px;font-weight:600}
+  .kw b{font-weight:700;color:var(--accent);font-size:12px}
 
-  .tip{background:#fdf3ec;border:1px solid #f3d8c4;color:var(--accent);font-size:13px;padding:11px 14px;border-radius:12px;margin-bottom:14px;display:flex;gap:9px;align-items:flex-start}
+  .tip{background:var(--tint-accent);border:1px solid #F0D9C0;color:var(--accent);font-size:13px;padding:11px 14px;border-radius:12px;margin-bottom:14px;display:flex;gap:9px;align-items:flex-start}
   .tip svg{width:17px;height:17px;flex-shrink:0;margin-top:2px}
 
   /* ---------- Modal ---------- */
@@ -305,14 +334,13 @@
         <h2>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>对话时间线
         </h2>
-        <p class="sub">按时间倒序排列，每次对话的主题、客户反馈与教练评价一目了然</p>
+        <p class="sub">按时间倒序排列，每次对话的主题、客户反馈与教练反馈一目了然</p>
         <div id="filters" class="filters hidden"></div>
         <div class="date-nav">
-          <span class="dn-label">快速定位</span>
-          <select id="yearPick"><option value="all">全部年份</option></select>
-          <select id="monthPick"><option value="all">全部月份</option></select>
+          <span class="dn-label">快速定位（颜色越深记录越多，点击某天筛选）</span>
           <button class="dn-clear hidden" id="dnClear">清除定位</button>
           <span class="dn-count" id="dnCount"></span>
+          <div class="mh" id="heatGrid"></div>
         </div>
         <div id="timelineList"></div>
       </section>
@@ -325,7 +353,7 @@
         <form id="sessionForm">
           <input type="hidden" id="editId">
           <div class="grid2">
-            <div class="field">
+            <div class="field" data-coach>
               <label>对话日期</label>
               <input type="date" id="fDate" required>
             </div>
@@ -334,18 +362,8 @@
               <select id="fClient"><option value="">— 选择客户 —</option></select>
               <input type="text" id="fClientNew" class="hidden" placeholder="输入新客户 ID（如 spring_2026）" style="margin-top:8px">
             </div>
-            <div class="field">
-              <label>本次状态 <span class="hint">（1-5，越高越投入/舒展）</span></label>
-              <div class="mood-pick" id="moodPick">
-                <button type="button" data-v="1">1</button>
-                <button type="button" data-v="2">2</button>
-                <button type="button" data-v="3">3</button>
-                <button type="button" data-v="4">4</button>
-                <button type="button" data-v="5">5</button>
-              </div>
-            </div>
           </div>
-          <div class="field" id="typeField">
+          <div class="field" id="typeField" data-coach>
             <label>记录类型</label>
             <div class="seg" id="typePick">
               <button type="button" data-t="coach" class="on">教练对话</button>
@@ -354,19 +372,35 @@
           </div>
 
           <div id="grpCoach">
-            <div class="field">
+            <div class="field" data-coach>
               <label>对话主题</label>
               <input type="text" id="fTopic" placeholder="例如：职业转型方向的初步探索" maxlength="60">
             </div>
             <div class="field">
-              <label>客户反馈 <span class="hint">（客户可自行在下方时间线卡片补充/修改）</span></label>
-              <textarea id="fFeedback" placeholder="客户当次的感受、触动、收获……"></textarea>
+              <label>觉察收获 <span class="hint">（客户当次的感受、觉察与收获——可自己补充/修改）</span></label>
+              <textarea id="fFeedback" placeholder="客户当次的感受、情绪、触动，以及这次的核心觉察、顿悟、新认知……"></textarea>
+            </div>
+            <div class="field" data-coach>
+              <label>教练反馈 <span class="hint">（不是评判，而是你作为教练的观察、阶段反馈）</span></label>
+              <textarea id="fEval" placeholder="你的观察、阶段反馈……"></textarea>
+            </div>
+            <div class="field" data-coach>
+              <label>行动承诺 <span class="hint">（客户这次承诺要做的事，会出现在「今日关注」）</span></label>
+              <textarea id="fAction" placeholder="例如：周一与家人同步生育计划"></textarea>
             </div>
             <div class="field">
-              <label>教练评价</label>
-              <textarea id="fEval" placeholder="你的观察、阶段判断、下一步建议……"></textarea>
+              <label>行动未完成原因 <span class="hint">（可选，行动没做时的阻碍说明）</span></label>
+              <textarea id="fActionBlock" placeholder="例如：因出差推迟、家人没回应……"></textarea>
+            </div>
+            <div class="field" data-coach>
+              <label>行动截止日 <span class="hint">（可选，会显示在「今日关注」；留空即无截止日）</span></label>
+              <input type="date" id="fActionDue">
             </div>
             <div class="field">
+              <label>客户反馈 <span class="hint">（客户写的反馈/证言，可用于宣传）</span></label>
+              <textarea id="fTestimonial" placeholder="客户在对话后写的反馈、好评……"></textarea>
+            </div>
+            <div class="field" data-coach>
               <label>成长关键词 <span class="hint">（用空格或逗号分隔）</span></label>
               <input type="text" id="fTags" placeholder="自我觉察, 行动力">
             </div>
@@ -374,22 +408,18 @@
 
           <div id="grpSup" class="hidden">
             <div class="field">
-              <label>督导重点</label>
-              <input type="text" id="fSupFocus" placeholder="本次督导聚焦的议题 / 个案" maxlength="60">
-            </div>
-            <div class="field">
-              <label>督导反馈</label>
-              <textarea id="fSupFeedback" placeholder="对受督导者工作的观察、肯定与建议……"></textarea>
+              <label>督导后反馈 <span class="hint">（教练与客户都可填写 / 修改——这是督导后的共同反馈）</span></label>
+              <textarea id="fSupFeedback" placeholder="督导后，客户或教练的反馈、触动、下一步……"></textarea>
             </div>
           </div>
 
           <div class="grid2">
-            <div class="field">
-              <label id="lblFollow">待跟进事项 <span class="hint">（可选）</span></label>
-              <textarea id="fFollow" placeholder="留给客户的轻量练习或下次要谈的点"></textarea>
+            <div class="field" data-coach>
+              <label id="lblFollow">下次关注 <span class="hint">（教练内部，客户不可见）</span></label>
+              <textarea id="fFollow" placeholder="下次对话前你自己要关注、要谈的点"></textarea>
             </div>
-            <div class="field">
-              <label id="lblPlan">计划跟进日期 <span class="hint">（可选）</span></label>
+            <div class="field" data-coach>
+              <label id="lblPlan">计划下次对话日期 <span class="hint">（可选）</span></label>
               <input type="date" id="fPlan">
             </div>
           </div>
@@ -594,19 +624,20 @@ function handleErr(e){
 function renderToday(){
   const el=$("#today");
   const t=todayStr();
-  const pending=sessions.filter(s=>s.follow&&!s.follow_done);
+  const pending=sessions.filter(s=>s.action&&!s.action_done);
   pending.sort((a,b)=>{
-    const ao=(a.plan&&a.plan<t)?0:1,bo=(b.plan&&b.plan<t)?0:1;
+    const ao=(a.action_due&&a.action_due<t)?0:1,bo=(b.action_due&&b.action_due<t)?0:1;
     if(ao!==bo)return ao-bo;
-    return (a.plan||"").localeCompare(b.plan||"");
+    return (a.action_due||"").localeCompare(b.action_due||"");
   });
-  let html='<div class="th">'+ICON.clock+'今日关注<span class="pill">'+(pending.length?pending.length+" 项待跟进":"一切顺畅")+'</span></div>';
+  let html='<div class="th">'+ICON.clock+'今日关注<span class="pill">'+(pending.length?pending.length+" 项待行动":"一切顺畅")+'</span></div>';
   if(pending.length===0){
     const last=sessions.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
-    html+='<div class="empty">暂时没有待跟进的事项。'+(last?('上一次对话是 <b>'+esc(last.date)+'</b> · '+esc(last.topic||last.s_focus||"")+'。'):'记录第一次对话，开始你们的成长轨迹吧。')+'</div>';
+    html+='<div class="empty">暂时没有待行动的事项。'+(last?('上一次对话是 <b>'+esc(last.date)+'</b> · '+esc(last.topic||last.s_focus||"")+'。'):'记录第一次对话，开始你们的成长轨迹吧。')+'</div>';
   }else{
     pending.forEach(s=>{
-      const overdue=s.plan&&s.plan<t;
+      const due=s.action_due||"";
+      const overdue=due&&due<t;
       const sup=(s.type||"coach")==="supervise";
       const st=sup?(s.s_focus||""):(s.topic||"");
       const tl=HAS_SUP?'<span style="opacity:.7"> · '+TYPE_LABEL[s.type||"coach"]+'</span>':'';
@@ -614,20 +645,30 @@ function renderToday(){
       html+='<div class="td-item'+(overdue?" over":"")+'">'+
         '<div class="ic">'+(overdue?ICON.flag:ICON.chat)+'</div>'+
         '<div class="body"><div class="t">'+esc(st)+tl+'</div>'+
-        '<div class="d">'+nl2br(s.follow)+'</div>'+
-        '<div class="meta">'+(overdue?('逾期未完成 · 计划 '+esc(s.plan)):('待跟进 · '+(s.plan?('计划 '+esc(s.plan)):'无截止日')))+'</div>'+cid+'</div>'+
-        '<div class="act"><button class="btn" data-done="'+esc(s.id)+'">'+ICON.check+'标记已跟进</button></div>'+
+        '<div class="d">'+nl2br(s.action)+'</div>'+
+        '<div class="meta">'+(overdue?('已逾期 · 截止 '+esc(due)):('待行动 · '+(due?('截止 '+esc(due)):'无截止日')))+'</div>'+cid+'</div>'+
+        '<div class="act"><button class="btn sm" data-done="'+esc(s.id)+'">'+ICON.check+'已完成</button>'+
+        '<button class="btn ghost sm" data-edit="'+esc(s.id)+'">'+ICON.edit+'编辑</button></div>'+
       '</div>';
     });
   }
   el.innerHTML=html;
   $$('#today [data-done]').forEach(b=>b.addEventListener('click',()=>markDone(b.dataset.done)));
+  $$('#today [data-edit]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.edit)));
 }
 async function markDone(id){
   const s=sessions.find(x=>x.id===id);if(!s)return;
-  s.follow_done=true;
-  try{await sbUpdate(id,{follow_done:true});}
-  catch(e){if(handleErr(e))return;alert("更新失败，请重试");s.follow_done=false;return;}
+  s.action_done=true;
+  try{await sbUpdate(id,{action_done:true});}
+  catch(e){if(handleErr(e))return;alert("更新失败，请重试");s.action_done=false;return;}
+  renderAll();
+}
+async function toggleAction(id){
+  const s=sessions.find(x=>x.id===id);if(!s)return;
+  const nv=!s.action_done;
+  s.action_done=nv;
+  try{await sbUpdate(id,{action_done:nv});}
+  catch(e){if(handleErr(e))return;s.action_done=!nv;alert("更新失败，请重试");return;}
   renderAll();
 }
 
@@ -635,7 +676,10 @@ async function markDone(id){
 let curFilter="all", curYear="all", curMonth="all";
 function renderFilters(){
   const box=$("#filters");
-  if(CUR_CLIENT!=="all"||!IS_COACH()){box.classList.add("hidden");return;}
+  // 教练：仅“全部客户”时显示筛选条
+  // 客户：仅当该客户存在督导记录时才显示
+  const showForClient=!IS_COACH() && sessions.some(s=>(s.type||"coach")==="supervise");
+  if((CUR_CLIENT!=="all"&&IS_COACH())||(!IS_COACH()&&!showForClient)){box.classList.add("hidden");return;}
   box.classList.remove("hidden");
   box.innerHTML='<button data-f="all" class="'+(curFilter==="all"?"on":"")+'">全部</button>'+
     '<button data-f="coach" class="'+(curFilter==="coach"?"on":"")+'">教练对话</button>'+
@@ -644,12 +688,34 @@ function renderFilters(){
 }
 function renderDateNav(){
   const years=[...new Set(sessions.map(s=>s.date.slice(0,4)))].sort().reverse();
-  $("#yearPick").innerHTML='<option value="all">全部年份</option>'+years.map(y=>'<option value="'+y+'"'+(y===curYear?' selected':'')+'>'+y+' 年</option>').join("");
-  $("#monthPick").innerHTML='<option value="all">全部月份</option>'+Array.from({length:12},(_,i)=>{const m=String(i+1).padStart(2,"0");return '<option value="'+m+'"'+(m===curMonth?' selected':'')+'>'+m+' 月</option>';}).join("");
+  const el=$("#heatGrid");
+  if(!years.length){
+    el.innerHTML='<div class="mh-inner"><div style="color:var(--muted);font-size:13px">记录第一次对话后，这里会出现按月分布的热力图。</div></div>';
+  }else{
+    const rows=years.map(y=>{
+      const cnt=Array(12).fill(0);
+      sessions.forEach(s=>{if(s.date.slice(0,4)===y)cnt[+s.date.slice(5,7)-1]++;});
+      const cells=cnt.map((c,i)=>{
+        const m=String(i+1).padStart(2,"0");
+        const lvl=c===0?"":(c===1?" lvl1":(c<=3?" lvl2":" lvl3"));
+        const sel=(y===curYear&&m===curMonth)?" sel":"";
+        return '<div class="mh-cell'+lvl+sel+'" data-y="'+y+'" data-m="'+m+'" title="'+esc(y+"年"+(i+1)+"月")+(c?(" · "+c+" 条"):"")+'">'+
+          '<span class="mn">'+(i+1)+'月</span>'+(c?'<span class="mc">'+c+'</span>':'')+
+        '</div>';
+      }).join("");
+      return '<div class="mh-row"><div class="mh-yr">'+y+'</div><div class="mh-cells">'+cells+'</div></div>';
+    }).join("");
+    el.innerHTML='<div class="mh-inner">'+rows+'</div>'+
+      '<div class="mh-legend"><span>少</span><i class="s0"></i><i class="s1"></i><i class="s2"></i><i class="s3"></i><span>多</span></div>';
+  }
+  $$('#heatGrid .mh-cell').forEach(b=>b.addEventListener('click',()=>{
+    const y=b.dataset.y,m=b.dataset.m;
+    if(curYear===y&&curMonth===m){curYear="all";curMonth="all";}
+    else{curYear=y;curMonth=m;}
+    renderDateNav();renderTimeline();
+  }));
   $("#dnClear").classList.toggle("hidden",curYear==="all"&&curMonth==="all");
 }
-$("#yearPick").addEventListener('change',e=>{curYear=e.target.value;renderDateNav();renderTimeline();});
-$("#monthPick").addEventListener('change',e=>{curMonth=e.target.value;renderDateNav();renderTimeline();});
 $("#dnClear").addEventListener('click',()=>{curYear="all";curMonth="all";renderDateNav();renderTimeline();});
 
 /* ---------- 时间线 ---------- */
@@ -657,8 +723,8 @@ function renderTimeline(){
   const el=$("#timelineList");
   let list=sessions.slice().sort((a,b)=>b.date.localeCompare(a.date));
   if(curFilter!=="all")list=list.filter(s=>(s.type||"coach")===curFilter);
-  if(curYear!=="all")list=list.filter(s=>s.date.slice(0,4)===curYear);
-  if(curMonth!=="all")list=list.filter(s=>s.date.slice(5,7)===curMonth);
+  if(curMonth!=="all")list=list.filter(s=>s.date.slice(0,4)===curYear&&s.date.slice(5,7)===curMonth);
+  else if(curYear!=="all")list=list.filter(s=>s.date.slice(0,4)===curYear);
   $("#dnCount").textContent=list.length?("显示 "+list.length+" / "+sessions.length+" 条"):"";
   if(list.length===0){
     const filteredOut=curFilter!=="all"||curYear!=="all"||curMonth!=="all";
@@ -672,117 +738,111 @@ function renderTimeline(){
     const cidTag=(IS_COACH()&&CUR_CLIENT==="all"&&s.client_id)?'<span class="tl-cid">'+esc(s.client_id)+'</span>':'';
     const title=sup?(s.s_focus||""):(s.topic||"");
     const tags=(s.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("");
-    const dots=Array.from({length:5},(_,i)=>'<span class="dot'+(i<(s.mood||0)?" on":"")+'"></span>').join("");
-    let followHtml="";
-    if(s.follow){
-      const cls=s.follow_done?"done":"pending";
-      const flb=sup?"下一步关注重点":"待跟进";
-      const pdLabel=sup?"下次督导 ":"计划 ";
-      followHtml='<div class="follow '+cls+'"><span class="ft">'+(s.follow_done?"已跟进":flb)+'</span><span>'+nl2br(s.follow)+'</span>'+(s.plan?'<span class="pd">'+pdLabel+esc(s.plan)+'</span>':'')+'</div>';
-    }
     let bodyRows="";
     if(sup){
-      if(s.s_feedback)bodyRows+='<div class="tl-row"><span class="lab">督导反馈</span><span class="val">'+nl2br(s.s_feedback)+'</span></div>';
+      bodyRows+='<div class="tl-row"><span class="lab">督导后反馈</span><span class="val">'+(s.s_feedback?nl2br(s.s_feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
     }else{
-      bodyRows+='<div class="tl-row" data-fbrow="'+esc(s.id)+'"><span class="lab">客户反馈</span><span class="val" id="fbval-'+esc(s.id)+'">'+nl2br(s.feedback||"")+'</span>'+
-        '<button class="btn sm fb-edit" data-fb="'+esc(s.id)+'">'+ICON.edit+'补充/修改</button></div>';
-      if(s.eval)bodyRows+='<div class="tl-row"><span class="lab">教练评价</span><span class="val">'+nl2br(s.eval)+'</span></div>';
+      bodyRows+='<div class="tl-row"><span class="lab">觉察收获</span><span class="val">'+(s.feedback?nl2br(s.feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      if(s.eval)bodyRows+='<div class="tl-row"><span class="lab">教练反馈</span><span class="val">'+nl2br(s.eval)+'</span></div>';
     }
-    const actions=canEdit?('<div class="tl-actions">'+
+    let actionHtml="";
+    if(s.action){
+      const cls=s.action_done?"done":"pending";
+      const toggleBtn=canEdit?('<button class="btn sm act-toggle" data-toggle="'+esc(s.id)+'">'+(s.action_done?"撤销":"标记完成")+'</button>'):'';
+      actionHtml='<div class="tl-row act-row '+cls+'"><span class="lab">'+(s.action_done?"已行动":"行动承诺")+'</span><span class="val">'+nl2br(s.action)+'</span>'+toggleBtn+'</div>';
+      if(!s.action_done){
+        actionHtml+='<div class="tl-row act-row sub"><span class="lab muted">未完成原因</span><span class="val">'+(s.action_block?nl2br(s.action_block):'<span class="ph">（未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      }
+    }
+    // 教练内部提醒：教练对话仅教练可见；督导的"下一步关注重点"客户可见
+    let followHtml="";
+    if(s.follow&&(IS_COACH()||sup)){
+      followHtml='<div class="follow coach-note"><span class="ft">'+(sup?"下一步关注重点":"下次关注")+'</span><span>'+nl2br(s.follow)+'</span>'+(s.plan?'<span class="pd">'+(sup?"下次督导 ":"计划 ")+esc(s.plan)+'</span>':'')+'</div>';
+    }
+    let testiHtml="";
+    if(s.testimonial||!IS_COACH()){
+      testiHtml='<div class="follow testimonial"><span class="ft">客户反馈</span><span class="val">'+(s.testimonial?nl2br(s.testimonial):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+    }
+    const actions=(canEdit||!IS_COACH())?('<div class="tl-actions">'+
         '<button class="btn sm" data-edit="'+esc(s.id)+'">'+ICON.edit+'编辑</button>'+
-        '<button class="btn sm danger" data-del="'+esc(s.id)+'">'+ICON.trash+'删除</button>'+
+        (canEdit?'<button class="btn sm danger" data-del="'+esc(s.id)+'">'+ICON.trash+'删除</button>':'')+
       '</div>'):"";
     return '<div class="tl-item'+(sup?" sup":"")+'"><div class="tl-card">'+
-      '<div class="tl-head"><span class="tl-date">'+esc(s.date)+'</span>'+typeBadge+cidTag+'<span class="tl-topic">'+esc(title)+'</span></div>'+
+      '<div class="tl-head"><div class="tl-meta"><span class="tl-date">'+esc(s.date)+'</span>'+typeBadge+cidTag+'</div><span class="tl-topic">'+esc(title)+'</span></div>'+
       bodyRows+
-      (tags?'<div class="tags">'+tags+'</div>':'')+
-      '<div class="mood">本次状态 '+dots+'</div>'+
+      actionHtml+
       followHtml+
+      testiHtml+
+      (tags?'<div class="tags">'+tags+'</div>':'')+
       actions+
     '</div></div>';
   }).join("")+'</div>';
   $$('#timelineList [data-edit]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.edit)));
   $$('#timelineList [data-del]').forEach(b=>b.addEventListener('click',()=>delSession(b.dataset.del)));
-  $$('#timelineList [data-fb]').forEach(b=>b.addEventListener('click',()=>editFeedback(b.dataset.fb)));
+  $$('#timelineList [data-toggle]').forEach(b=>b.addEventListener('click',()=>toggleAction(b.dataset.toggle)));
 }
 
-/* 客户反馈内联编辑（教练/客户均可） */
-function editFeedback(id){
-  const row=document.querySelector('[data-fbrow="'+CSS.escape(id)+'"]');
+/* 客户可改字段的内联编辑（教练/客户均可） */
+function inEditBtn(id,field){
+  return '<button class="btn sm fb-edit" data-in="'+esc(id)+'" data-field="'+esc(field)+'">'+ICON.edit+'编辑</button>';
+}
+async function inlineEdit(id,field){
+  const row=document.querySelector('[data-inrow="'+CSS.escape(id)+'-'+CSS.escape(field)+'"]');
   if(!row)return;
   const s=sessions.find(x=>x.id===id);if(!s)return;
-  const valEl=row.querySelector(".val");
-  row.innerHTML='<span class="lab">客户反馈</span>'+
-    '<span class="val" style="flex:1"><textarea id="fbedit-'+esc(id)+'">'+esc(s.feedback||"")+'</textarea>'+
-    '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn sm primary" data-fbsave="'+esc(id)+'">'+ICON.check+'保存反馈</button>'+
-    '<button class="btn sm ghost" data-fbcancel="'+esc(id)+'">取消</button></div></span>';
-  row.querySelector('[data-fbsave]').addEventListener('click',async()=>{
-    const v=row.querySelector('textarea').value.trim();
-    const old=s.feedback;
-    s.feedback=v;
-    try{await sbUpdate(id,{feedback:v});}
-    catch(e){if(handleErr(e))return;s.feedback=old;alert("保存失败");renderTimeline();return;}
+  const valEl=row.querySelector('.val');
+  if(!valEl){renderTimeline();return;}
+  valEl.innerHTML='<textarea style="width:100%;font-size:14.5px;min-height:60px;margin-top:4px;font-family:var(--font)">'+esc(s[field]||"")+'</textarea>'+
+    '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn sm primary" data-insave="'+esc(id)+'" data-field="'+esc(field)+'">'+ICON.check+'保存</button>'+
+    '<button class="btn sm ghost" data-incancel="'+esc(id)+'" data-field="'+esc(field)+'">取消</button></div>';
+  const eb=row.querySelector('.fb-edit');if(eb)eb.style.visibility='hidden';
+  row.querySelector('[data-insave]').addEventListener('click',async()=>{
+    const v=row.querySelector('textarea').value;
+    const old=s[field];
+    s[field]=v;
+    try{await sbUpdate(id,{[field]:v});}
+    catch(e){if(handleErr(e))return;s[field]=old;alert("保存失败，请重试");renderTimeline();return;}
     renderTimeline();renderOverview();
   });
-  row.querySelector('[data-fbcancel]').addEventListener('click',()=>renderTimeline());
+  row.querySelector('[data-incancel]').addEventListener('click',()=>renderTimeline());
 }
 
 /* ---------- 成长概览 ---------- */
+function spanText(a,b){
+  const days=Math.max(1,Math.round((b-a)/86400000)+1);
+  if(days<31)return {num:days,unit:"天"};
+  const months=Math.round(days/30.44);
+  return {num:months,unit:"个月"};
+}
 function renderOverview(){
   const el=$("#overviewBody");
   if(sessions.length===0){el.innerHTML='<div class="empty-state"><div class="big">暂无数据</div>记录对话后，这里会出现你的成长数据。</div>';return;}
   const sorted=sessions.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const total=sorted.length;
   const first=parseDate(sorted[0].date),last=parseDate(sorted[sorted.length-1].date);
-  const days=Math.max(1,Math.round((last-first)/86400000)+1);
-  const avgMood=(sorted.reduce((a,s)=>a+(s.mood||0),0)/total).toFixed(1);
-
-  let distHtml="";
+  const span=spanText(first,last);
+  const actDone=sorted.filter(s=>s.action&&s.action_done).length;
   const c=sessions.filter(s=>(s.type||"coach")==="coach").length;
   const sp=total-c;
-  distHtml='<p class="dist">其中 <span>教练对话 '+c+'</span> · <span class="sup">督导 '+sp+'</span></p>';
 
   let html='<div class="stats">'+
-    '<div class="stat"><div class="n">'+total+'</div><div class="l">对话次数</div></div>'+
-    '<div class="stat"><div class="n">'+days+'</div><div class="l">陪伴天数</div></div>'+
-    '<div class="stat"><div class="n">'+avgMood+'</div><div class="l">平均状态</div></div>'+
-  '</div>'+distHtml;
-
-  html+='<div class="ov-block"><div class="ttl">'+ICON.spark+'状态变化趋势</div><div class="chart-wrap">'+moodChart(sorted)+'</div></div>';
+    '<div class="stat"><div class="n">'+c+'</div><div class="l">教练对话</div></div>'+
+    (sp>0?'<div class="stat"><div class="n">'+sp+'</div><div class="l">督导</div></div>':'')+
+    '<div class="stat"><div class="n">'+span.num+'<span class="unit">'+span.unit+'</span></div><div class="l">陪伴</div></div>'+
+    '<div class="stat"><div class="n">'+actDone+'</div><div class="l">已行动承诺</div></div>'+
+  '</div>';
 
   const freq={};
   sorted.forEach(s=>(s.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
   const arr=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const max=arr.length?arr[0][1]:1;
   if(arr.length){
-    html+='<div class="ov-block"><div class="ttl">'+ICON.star+'高频成长关键词</div>';
+    html+='<div class="ov-block"><div class="ttl">'+ICON.star+'高频成长关键词</div><div class="kw-wrap">';
     arr.forEach(([name,c])=>{
-      html+='<div class="bar-row"><span class="name">'+esc(name)+'</span><span class="track"><span class="fill" style="width:'+(c/max*100)+'%"></span></span><span class="cnt">'+c+'</span></div>';
+      html+='<span class="kw">'+esc(name)+'<b>'+c+'</b></span>';
     });
-    html+='</div>';
+    html+='</div></div>';
   }
   el.innerHTML=html;
-}
-
-function moodChart(data){
-  const W=600,H=220,padL=34,padR=14,padT=14,padB=34;
-  const iw=W-padL-padR,ih=H-padT-padB;
-  const n=data.length;
-  const x=i=>n===1?padL+iw/2:padL+iw*i/(n-1);
-  const y=v=>padT+ih*(1-(v-1)/4);
-  let pts=data.map((s,i)=>[x(i),y(s.mood||0)]);
-  let line=pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
-  let grid="";
-  [1,2,3,4,5].forEach(v=>{const yy=y(v);grid+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#E2E0D8" stroke-width="1"/><text x="'+(padL-8)+'" y="'+(yy+4)+'" font-size="10" fill="#5f6b78" text-anchor="end">'+v+'</text>';});
-  let dots="",labels="";
-  data.forEach((s,i)=>{
-    const [px,py]=pts[i];
-    dots+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="4.5" fill="#C96F4A" stroke="#fff" stroke-width="2"/>';
-    const lbl=s.date.slice(5);
-    labels+='<text x="'+px.toFixed(1)+'" y="'+(H-12)+'" font-size="9.5" fill="#5f6b78" text-anchor="middle">'+esc(lbl)+'</text>';
-  });
-  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="状态变化趋势">'+grid+
-    '<polyline points="'+line+'" fill="none" stroke="#27456C" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots+labels+'</svg>';
 }
 
 /* ---------- 30 条提示 ---------- */
@@ -807,23 +867,21 @@ async function renderAll(){
 }
 
 /* ---------- 表单 ---------- */
-let pickedMood=0,pickedType="coach";
-function setMood(v){pickedMood=v;$$('#moodPick button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));}
+let pickedType="coach";
 function setType(t){
   pickedType=t;
   $$('#typePick button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   const sup=t==="supervise";
   $("#grpCoach").classList.toggle("hidden",sup);
   $("#grpSup").classList.toggle("hidden",!sup);
-  $("#lblFollow").textContent=sup?"下一步关注重点":"待跟进事项";
-  $("#lblPlan").textContent=sup?"下次督导日期":"计划跟进日期";
-  $("#fFollow").placeholder=sup?"留给受督导者下次要聚焦的方向":"留给客户的轻量练习或下次要谈的点";
+  $("#lblFollow").textContent=sup?"下一步关注重点":"下次关注";
+  $("#lblPlan").textContent=sup?"下次督导日期":"计划下次对话日期";
+  $("#fFollow").placeholder=sup?"留给受督导者下次要聚焦的方向":"下次对话前你自己要关注、要谈的点";
 }
-$$('#moodPick button').forEach(b=>b.addEventListener('click',()=>setMood(+b.dataset.v)));
 $$('#typePick button').forEach(b=>b.addEventListener('click',()=>setType(b.dataset.t)));
 
 function resetForm(){
-  $("#sessionForm").reset();$("#editId").value="";setMood(0);setType("coach");
+  $("#sessionForm").reset();$("#editId").value="";setType("coach");
   $("#fDate").value=todayStr();
   if(IS_COACH()){
     const fc=$("#fClient");
@@ -835,47 +893,74 @@ function resetForm(){
   }
   $("#btnSubmit").textContent="保存对话";$("#btnCancel").classList.add("hidden");
   $("#formSub").textContent="填写本次对话的核心内容，保存后会出现在时间线最上方";
+  if(!IS_COACH())$("#add").classList.add("hidden");
 }
 $("#btnCancel").addEventListener('click',resetForm);
 
 function editSession(id){
   const s=sessions.find(x=>x.id===id);if(!s)return;
-  $("#editId").value=s.id;
-  $("#fDate").value=s.date;
-  const cid=s.client_id||"";
-  const fc=$("#fClient");
-  if(cid&&!fc.querySelector('option[value="'+cid+'"]')){
-    const o=document.createElement("option");o.value=cid;o.textContent=cid;
-    const anchor=fc.querySelector('option[value="__new__"]');
-    anchor?fc.insertBefore(o,anchor):fc.appendChild(o);
-  }
-  fc.value=cid;
-  $("#fClientNew").value="";
-  toggleNewClient();
-  $("#fFollow").value=s.follow||"";
-  $("#fPlan").value=s.plan||"";
   const sup=(s.type||"coach")==="supervise";
-  if(sup){
-    $("#fSupFocus").value=s.s_focus||"";
-    $("#fSupFeedback").value=s.s_feedback||"";
+  $("#editId").value=s.id;
+  setType(sup?"supervise":"coach");
+  if(IS_COACH()){
+    $("#sessionForm").classList.remove("client-mode");
+    $("#fDate").value=s.date;
+    const cid=s.client_id||"";
+    const fc=$("#fClient");
+    if(cid&&!fc.querySelector('option[value="'+cid+'"]')){
+      const o=document.createElement("option");o.value=cid;o.textContent=cid;
+      const anchor=fc.querySelector('option[value="__new__"]');
+      anchor?fc.insertBefore(o,anchor):fc.appendChild(o);
+    }
+    fc.value=cid;
+    $("#fClientNew").value="";
+    toggleNewClient();
+    $("#fFollow").value=s.follow||"";
+    $("#fPlan").value=s.plan||"";
+    if(sup){$("#fSupFeedback").value=s.s_feedback||"";}
+    else{
+      $("#fTopic").value=s.topic||"";
+      $("#fFeedback").value=s.feedback||"";
+      $("#fEval").value=s.eval||"";
+      $("#fAction").value=s.action||"";
+      $("#fActionBlock").value=s.action_block||"";
+      $("#fActionDue").value=s.action_due||"";
+      $("#fTestimonial").value=s.testimonial||"";
+      $("#fTags").value=(s.tags||[]).join(", ");
+    }
+    $("#btnSubmit").textContent="保存修改";$("#btnCancel").classList.remove("hidden");
+    $("#formSub").textContent="正在编辑：「"+(sup?"":(s.topic||""))+"」";
+    goTarget("add");
   }else{
-    $("#fTopic").value=s.topic||"";
+    // 客户视图：只显示客户可编辑字段（觉察收获 / 未完成原因 / 督导后反馈 / 客户反馈）
+    $("#sessionForm").classList.add("client-mode");
     $("#fFeedback").value=s.feedback||"";
-    $("#fEval").value=s.eval||"";
-    $("#fTags").value=(s.tags||[]).join(", ");
+    $("#fActionBlock").value=s.action_block||"";
+    $("#fTestimonial").value=s.testimonial||"";
+    if(sup)$("#fSupFeedback").value=s.s_feedback||"";
+    $("#btnSubmit").textContent="保存反馈";$("#btnCancel").classList.remove("hidden");
+    $("#formSub").textContent="补充或修改你在这次对话中的反馈内容";
+    $("#add").classList.remove("hidden");
+    goTarget("add");
   }
-  setMood(s.mood||0);setType(s.type||"coach");
-  $("#btnSubmit").textContent="保存修改";$("#btnCancel").classList.remove("hidden");
-  $("#formSub").textContent="正在编辑：「"+(sup?(s.s_focus||""):(s.topic||""))+"」";
-  goTarget("add");
 }
 
 $("#sessionForm").addEventListener('submit',async e=>{
   e.preventDefault();
-  if(!IS_COACH()){alert("客户无法直接新增对话，反馈可在下方卡片补充");return;}
+  if(!IS_COACH()){
+    const id=$("#editId").value;
+    if(!id){alert("客户无法直接新增对话，反馈可在下方卡片的「编辑」按钮补充");return;}
+    const s=sessions.find(x=>x.id===id);
+    const rec={};
+    if((s.type||"coach")==="supervise"){ rec.s_feedback=$("#fSupFeedback").value.trim(); }
+    else { rec.feedback=$("#fFeedback").value.trim(); rec.action_block=$("#fActionBlock").value.trim(); rec.testimonial=$("#fTestimonial").value.trim(); }
+    try{ await sbUpdate(id,rec); }
+    catch(err){ if(handleErr(err))return; alert(err.message||"保存失败，请重试"); return; }
+    $("#add").classList.add("hidden");
+    resetForm(); await reload(); goTarget("timeline"); return;
+  }
   const isSup=pickedType==="supervise";
-  if(isSup){if(!$("#fSupFocus").value.trim()){alert("请填写督导重点");return;}}
-  else{if(!$("#fTopic").value.trim()){alert("请填写对话主题");return;}}
+  if(!isSup){if(!$("#fTopic").value.trim()){alert("请填写对话主题");return;}}
   const isNewClient=$("#fClient").value==="__new__";
   const cid=isNewClient?$("#fClientNew").value.trim():$("#fClient").value;
   if(!cid){alert("请选择或填写归属客户");return;}
@@ -883,18 +968,20 @@ $("#sessionForm").addEventListener('submit',async e=>{
     client_id:cid, coach_id:COACH_ID,
     date:$("#fDate").value||todayStr(),
     type:isSup?"supervise":"coach",
-    mood:pickedMood,
     follow:$("#fFollow").value.trim(),
     plan:$("#fPlan").value||null,
-    follow_done:$("#editId").value?(sessions.find(x=>x.id===$("#editId").value)?.follow_done??false):false
+    action_done:$("#editId").value?(sessions.find(x=>x.id===$("#editId").value)?.action_done??false):false
   };
   if(isSup){
-    rec.s_focus=$("#fSupFocus").value.trim();
     rec.s_feedback=$("#fSupFeedback").value.trim();
   }else{
     rec.topic=$("#fTopic").value.trim();
     rec.feedback=$("#fFeedback").value.trim();
     rec.eval=$("#fEval").value.trim();
+    rec.action=$("#fAction").value.trim();
+    rec.action_block=$("#fActionBlock").value.trim();
+    rec.action_due=$("#fActionDue").value||null;
+    rec.testimonial=$("#fTestimonial").value.trim();
     rec.tags=$("#fTags").value.split(/[,，\s]+/).map(t=>t.trim()).filter(Boolean);
   }
   const id=$("#editId").value;
@@ -943,8 +1030,9 @@ $("#fileInput").addEventListener('change',async e=>{
         date:x.date||todayStr(),
         type:x.type||"coach",
         topic:x.topic||"",feedback:x.feedback||"",eval:x.eval||"",tags:x.tags||[],
+        action:x.action||"",action_block:x.action_block||"",testimonial:x.testimonial||"",
         s_focus:x.s_focus||"",s_feedback:x.s_feedback||"",
-        follow:x.follow||"",plan:x.plan||null,mood:x.mood||0,follow_done:!!x.follow_done
+        follow:x.follow||"",plan:x.plan||null,action_done:!!x.action_done
       }));
       if(rows.length===0)throw 0;
       try{await sbInsert(rows);}
