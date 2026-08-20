@@ -833,10 +833,18 @@ function renderOverview(){
   '</div>';
 
   const freq={};
-  sorted.forEach(s=>(s.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
-  const arr=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const seen=new Set();
+  sorted.forEach(s=>{
+    seen.clear();
+    (s.tags||[]).forEach(t=>{
+      if(seen.has(t))return; seen.add(t);   // 单条对话内去重，避免手滑重复填词被重复计数
+      freq[t]=(freq[t]||0)+1;
+    });
+  });
+  // 覆盖全部历史对话的关键词，按频次从高到低完整呈现（不再截断 Top8）
+  const arr=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
   if(arr.length){
-    html+='<div class="ov-block"><div class="ttl">'+ICON.star+'高频成长关键词</div><div class="kw-wrap">';
+    html+='<div class="ov-block"><div class="ttl">'+ICON.star+'成长关键词（按出现频次）</div><div class="kw-wrap">';
     arr.forEach(([name,c])=>{
       html+='<span class="kw">'+esc(name)+'<b>'+c+'</b></span>';
     });
