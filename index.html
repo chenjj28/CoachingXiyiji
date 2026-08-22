@@ -1038,7 +1038,7 @@ $("#fileInput").addEventListener('change',async e=>{
       if(!d||!Array.isArray(d.sessions))throw 0;
       const cid=IS_COACH()?(CUR_CLIENT&&CUR_CLIENT!=="all"?CUR_CLIENT:""):ME.client_id;
       const rows=d.sessions.map(x=>({
-        id:x.id||uid(),
+        id:x.id,
         client_id:cid||x.client_id||CUR_CLIENT||"unknown",
         coach_id:COACH_ID,
         date:x.date||todayStr(),
@@ -1050,7 +1050,7 @@ $("#fileInput").addEventListener('change',async e=>{
       }));
       if(rows.length===0)throw 0;
       try{await sbInsert(rows);}
-      catch(err){if(handleErr(err))return;alert("导入失败：写入错误");return;}
+      catch(err){if(handleErr(err))return;alert("导入失败："+(err.message||"写入错误"));return;}
       alert("已导入 "+rows.length+" 条对话记录");
       await reload();
     }catch(err){alert("导入失败：文件格式不正确");}
