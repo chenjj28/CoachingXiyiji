@@ -681,10 +681,10 @@ async function toggleAction(id){
 let curFilter="all", curYear="all", curMonth="all";
 function renderFilters(){
   const box=$("#filters");
-  // 教练：仅“全部客户”时显示筛选条
-  // 客户：仅当该客户存在督导记录时才显示
-  const showForClient=!IS_COACH() && sessions.some(s=>(s.type||"coach")==="supervise");
-  if(!IS_COACH()&&!showForClient){box.classList.add("hidden");return;}
+  // 仅当当前可见范围内同时存在「教练对话」和「督导」两种类型时才显示筛选条
+  const hasCoach=sessions.some(s=>(s.type||"coach")==="coach");
+  const hasSup=sessions.some(s=>(s.type||"coach")==="supervise");
+  if(!(hasCoach&&hasSup)){box.classList.add("hidden");curFilter="all";return;}
   box.classList.remove("hidden");
   box.innerHTML='<button data-f="all" class="'+(curFilter==="all"?"on":"")+'">全部</button>'+
     '<button data-f="coach" class="'+(curFilter==="coach"?"on":"")+'">教练对话</button>'+
@@ -1037,8 +1037,7 @@ $("#fileInput").addEventListener('change',async e=>{
     try{
       const d=JSON.parse(r.result);
       if(!d||!Array.isArray(d.sessions))throw 0;
-      const importCid=x.client_id||"";
-      const cid=importCid||(IS_COACH()&&CUR_CLIENT&&CUR_CLIENT!=="all"?CUR_CLIENT:importCid);
+      const cid=IS_COACH()&&CUR_CLIENT&&CUR_CLIENT!=="all"?CUR_CLIENT:"";
       const rows=d.sessions.map(x=>({
         id:x.id,
         client_id:cid||x.client_id||CUR_CLIENT||"unknown",
