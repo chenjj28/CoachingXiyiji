@@ -116,6 +116,16 @@
   .mh-legend .s1{background:#DCE7F1}
   .mh-legend .s2{background:#AFC4DA}
   .mh-legend .s3{background:var(--brand)}
+  .mh-cell.sup-lvl1{background:#FBE3D6;border-color:#FBE3D6}
+  .mh-cell.sup-lvl2{background:#EBAE8C;border-color:#EBAE8C}
+  .mh-cell.sup-lvl3{background:var(--accent);border-color:var(--accent)}
+  .mh-cell.sup-lvl3 .mn,.mh-cell.sup-lvl3 .mc{color:#fff}
+  .mh-cell[class*="sup-"] .mc{color:var(--accent)}
+  .mh-cell[class*="sup-"]:hover{border-color:var(--accent)}
+  .mh-cell.sup-sel{outline:2px solid var(--brand);outline-offset:1px}
+  .mh-legend .sup-s1{background:#FBE3D6}
+  .mh-legend .sup-s2{background:#EBAE8C}
+  .mh-legend .sup-s3{background:var(--accent)}
 
   /* ---------- Timeline ---------- */
   .timeline{position:relative;padding-left:26px;margin-top:6px}
@@ -124,8 +134,7 @@
   .tl-item:last-child{margin-bottom:0}
   .tl-item:before{content:"";position:absolute;left:-22px;top:20px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--brand);box-shadow:0 0 0 3px var(--bg)}
   .tl-item.sup:before{border-color:var(--accent)}
-  .tl-card{border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:14px;padding:15px 16px;background:#fff}
-  .tl-card.sup{border-left-color:var(--accent)}
+  .tl-card{border:1px solid var(--line);border-radius:14px;padding:15px 16px;background:#fff}
   .tl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
   .tl-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .tl-date{font-size:13.5px;font-weight:600;color:var(--brand);background:var(--tint-brand);padding:4px 12px;border-radius:20px;line-height:1.4;white-space:nowrap}
@@ -694,24 +703,29 @@ function renderFilters(){
 function renderDateNav(){
   const years=[...new Set(sessions.map(s=>s.date.slice(0,4)))].sort().reverse();
   const el=$("#heatGrid");
+  // 日历按筛选类型只统计对应记录；督导用橙色系、教练对话/全部用蓝色系
+  const dateSrc=sessions.filter(s=>curFilter==="all"||(s.type||"coach")===curFilter);
+  const supMode=curFilter==="supervise";
   if(!years.length){
     el.innerHTML='<div class="mh-inner"><div style="color:var(--muted);font-size:13px">记录第一次对话后，这里会出现按月分布的热力图。</div></div>';
   }else{
+    const pfx=supMode?"sup-":"";
     const rows=years.map(y=>{
       const cnt=Array(12).fill(0);
-      sessions.forEach(s=>{if(s.date.slice(0,4)===y)cnt[+s.date.slice(5,7)-1]++;});
+      dateSrc.forEach(s=>{if(s.date.slice(0,4)===y)cnt[+s.date.slice(5,7)-1]++;});
       const cells=cnt.map((c,i)=>{
         const m=String(i+1).padStart(2,"0");
         const lvl=c===0?"":(c===1?" lvl1":(c<=3?" lvl2":" lvl3"));
         const sel=(y===curYear&&m===curMonth)?" sel":"";
-        return '<div class="mh-cell'+lvl+sel+'" data-y="'+y+'" data-m="'+m+'" title="'+esc(y+"年"+(i+1)+"月")+(c?(" · "+c+" 条"):"")+'">'+
+        return '<div class="mh-cell '+pfx+lvl+sel+'" data-y="'+y+'" data-m="'+m+'" title="'+esc(y+"年"+(i+1)+"月")+(c?(" · "+c+" 条"):"")+'">'+
           '<span class="mn">'+(i+1)+'月</span>'+(c?'<span class="mc">'+c+'</span>':'')+
         '</div>';
       }).join("");
       return '<div class="mh-row"><div class="mh-yr">'+y+'</div><div class="mh-cells">'+cells+'</div></div>';
     }).join("");
+    const legendName=supMode?"督导":"对话";
     el.innerHTML='<div class="mh-inner">'+rows+'</div>'+
-      '<div class="mh-legend"><span>少</span><i class="s0"></i><i class="s1"></i><i class="s2"></i><i class="s3"></i><span>多</span></div>';
+      '<div class="mh-legend"><span>'+legendName+'少</span><i class="s0"></i><i class="'+pfx+'s1"></i><i class="'+pfx+'s2"></i><i class="'+pfx+'s3"></i><span>多</span></div>';
   }
   $$('#heatGrid .mh-cell').forEach(b=>b.addEventListener('click',()=>{
     const y=b.dataset.y,m=b.dataset.m;
