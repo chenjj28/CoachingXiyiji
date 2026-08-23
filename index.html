@@ -698,7 +698,7 @@ function renderFilters(){
   box.innerHTML='<button data-f="all" class="'+(curFilter==="all"?"on":"")+'">全部</button>'+
     '<button data-f="coach" class="'+(curFilter==="coach"?"on":"")+'">教练对话</button>'+
     '<button data-f="supervise" class="'+(curFilter==="supervise"?"on":"")+'">督导</button>';
-  $$('#filters button').forEach(b=>b.addEventListener('click',()=>{curFilter=b.dataset.f;renderFilters();renderTimeline();}));
+  $$('#filters button').forEach(b=>b.addEventListener('click',()=>{curFilter=b.dataset.f;renderFilters();renderDateNav();renderTimeline();}));
 }
 function renderDateNav(){
   const years=[...new Set(sessions.map(s=>s.date.slice(0,4)))].sort().reverse();
