@@ -169,6 +169,13 @@
   .follow.coach-note .ft{color:var(--brand2)}
   .follow.testimonial{background:var(--tint-accent);border:1px solid #F0D9C0;border-left:3px solid var(--accent);color:var(--accent)}
   .follow.testimonial .ft{color:var(--accent)}
+  .tl-inline-edit{margin-top:12px;padding:14px;background:var(--tint-brand);border:1px solid #CFD9E8;border-left:3px solid var(--brand);border-radius:12px}
+  .tl-inline-edit .ie-head{font-size:13px;font-weight:700;color:var(--brand2);margin-bottom:10px}
+  .tl-inline-edit .ie-row{margin-bottom:10px}
+  .tl-inline-edit .ie-row label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+  .tl-inline-edit .ie-f{width:100%;font-family:var(--font);font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;box-sizing:border-box;resize:vertical}
+  .tl-inline-edit .ie-f:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(39,69,108,.12)}
+  .tl-inline-edit .ie-actions{display:flex;gap:8px;margin-top:4px}
   .tl-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .empty-state{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
   .empty-state .big{font-size:15px;color:var(--brand2);font-weight:600;margin-bottom:6px}
@@ -202,6 +209,13 @@
   .kw-wrap{display:flex;flex-wrap:wrap;gap:8px}
   .kw{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);border:1px solid #F0D9C0;background:transparent;padding:4px 12px;border-radius:20px;font-weight:600}
   .kw b{font-weight:700;color:var(--accent);font-size:12px}
+  .kw.coach{border-color:#CFD9E8}
+  .kw.coach b{color:var(--brand)}
+  .kw.sup{border-color:#F0D9C0}
+  .kw.sup b{color:var(--accent)}
+  .src-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;margin-left:2px;letter-spacing:.3px}
+  .src-tag.coach{background:var(--tint-brand);color:var(--brand);border:1px solid #CFD9E8}
+  .src-tag.sup{background:var(--tint-accent);color:var(--accent);border:1px solid #F0D9C0}
 
   .tip{background:var(--tint-accent);border:1px solid #F0D9C0;color:var(--accent);font-size:13px;padding:11px 14px;border-radius:12px;margin-bottom:14px;display:flex;gap:9px;align-items:flex-start}
   .tip svg{width:17px;height:17px;flex-shrink:0;margin-top:2px}
@@ -759,7 +773,7 @@ function renderTimeline(){
     const tags=(s.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("");
     let bodyRows="";
     if(sup){
-      bodyRows+='<div class="tl-row"><span class="lab">督导后反馈</span><span class="val">'+(s.s_feedback?nl2br(s.s_feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      bodyRows+='<div class="follow testimonial"><span class="ft">督导后反馈</span><span class="val">'+(s.s_feedback?nl2br(s.s_feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
       if(s.sup_client)bodyRows+='<div class="tl-row"><span class="lab">教练客户</span><span class="val">'+esc(s.sup_client)+'</span></div>';
     }else{
       bodyRows+='<div class="tl-row"><span class="lab">觉察收获</span><span class="val">'+(s.feedback?nl2br(s.feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
@@ -852,24 +866,29 @@ function renderOverview(){
     '<div class="stat"><div class="n">'+actDone+'</div><div class="l">已行动承诺</div></div>'+
   '</div>';
 
-  const freq={};
-  const seen=new Set();
-  sorted.forEach(s=>{
-    seen.clear();
-    (s.tags||[]).forEach(t=>{
-      if(seen.has(t))return; seen.add(t);   // 单条对话内去重，避免手滑重复填词被重复计数
-      freq[t]=(freq[t]||0)+1;
+  // 成长关键词：教练对话 / 督导 两个来源分开统计与展示，各自完整列出对应关键词（不截断、不合并）
+  const kwByType=(type)=>{
+    const freq={}, seen=new Set();
+    sessions.filter(s=>(s.type||"coach")===type).forEach(s=>{
+      seen.clear();
+      (s.tags||[]).forEach(t=>{
+        if(seen.has(t))return; seen.add(t);   // 单条对话内去重，避免手滑重复填词被重复计数
+        freq[t]=(freq[t]||0)+1;
+      });
     });
-  });
-  // 覆盖全部历史对话的关键词，按频次从高到低完整呈现（不再截断 Top8）
-  const arr=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
-  if(arr.length){
-    html+='<div class="ov-block"><div class="ttl">'+ICON.star+'成长关键词（按出现频次）</div><div class="kw-wrap">';
-    arr.forEach(([name,c])=>{
-      html+='<span class="kw">'+esc(name)+'<b>'+c+'</b></span>';
-    });
-    html+='</div></div>';
-  }
+    return Object.entries(freq).sort((a,b)=>b[1]-a[1]);   // 完整展示该来源全部关键词，按频次从高到低
+  };
+  const coachKw=kwByType("coach");
+  const supKw=kwByType("supervise");
+  const kwBlock=(title,arr,tagCls,tagText,kwCls)=>{
+    if(!arr.length)return "";
+    let h='<div class="ov-block"><div class="ttl">'+ICON.star+title+'<span class="src-tag '+tagCls+'">'+tagText+'</span></div><div class="kw-wrap">';
+    arr.forEach(([name,c])=>{ h+='<span class="kw '+kwCls+'">'+esc(name)+'<b>'+c+'</b></span>'; });
+    h+='</div></div>';
+    return h;
+  };
+  html+=kwBlock("成长关键词",coachKw,"coach","教练对话","coach");
+  html+=kwBlock("成长关键词",supKw,"sup","督导","sup");
   el.innerHTML=html;
 }
 
@@ -925,52 +944,81 @@ function resetForm(){
 }
 $("#btnCancel").addEventListener('click',resetForm);
 
+function buildInlineFields(s, isCoach, sup){
+  if(sup){
+    if(isCoach) return [
+      {key:'s_focus',label:'督导聚焦',ph:'本次督导聚焦的方向 / 议题',rows:2},
+      {key:'s_feedback',label:'督导后反馈',ph:'督导后，客户或教练的反馈、触动、下一步……',rows:3},
+      {key:'sup_client',label:'教练客户',type:'text',ph:'受督导教练本次对话服务的客户 ID'},
+      {key:'follow',label:'下一步关注重点',ph:'留给受督导者下次要聚焦的方向',rows:2},
+      {key:'plan',label:'计划',type:'text',ph:'计划'}
+    ];
+    return [{key:'s_feedback',label:'督导后反馈',ph:'督导后，客户或教练的反馈、触动、下一步……',rows:3}];
+  }
+  if(isCoach) return [
+    {key:'topic',label:'对话主题',type:'text',ph:'本次对话的主题，一句话概括'},
+    {key:'feedback',label:'觉察收获',ph:'客户当次的感受、情绪、触动，以及这次的核心觉察、顿悟、新认知……',rows:4},
+    {key:'eval',label:'教练反馈',ph:'你的观察、阶段反馈……',rows:3},
+    {key:'action',label:'行动承诺',ph:'例如：周一与家人同步生育计划',rows:2},
+    {key:'action_block',label:'未完成原因',ph:'例如：因出差推迟、家人没回应……',rows:2},
+    {key:'action_due',label:'行动截止日',type:'date'},
+    {key:'testimonial',label:'客户反馈',ph:'客户在对话后写的反馈、好评……',rows:3},
+    {key:'tags',label:'标签',type:'text',ph:'自我觉察, 行动力'},
+    {key:'follow',label:'下次关注',ph:'下次对话前你自己要关注、要谈的点',rows:2},
+    {key:'plan',label:'计划',type:'text',ph:'计划'}
+  ];
+  // 客户视图：仅可编辑的字段（觉察收获 / 未完成原因 / 客户反馈；督导则督导后反馈）
+  return [
+    {key:'feedback',label:'觉察收获',ph:'客户当次的感受、情绪、触动，以及这次的核心觉察、顿悟、新认知……',rows:4},
+    {key:'action_block',label:'未完成原因',ph:'例如：因出差推迟、家人没回应……',rows:2},
+    {key:'testimonial',label:'客户反馈',ph:'客户在对话后写的反馈、好评……',rows:3}
+  ];
+}
+
+/* 就地编辑：在卡片所在位置直接展开编辑面板，不滚动到页面底部 */
 function editSession(id){
   const s=sessions.find(x=>x.id===id);if(!s)return;
   const sup=(s.type||"coach")==="supervise";
-  $("#editId").value=s.id;
-  setType(sup?"supervise":"coach");
-  if(IS_COACH()){
-    $("#sessionForm").classList.remove("client-mode");
-    $("#fDate").value=s.date;
-    const cid=s.client_id||"";
-    const fc=$("#fClient");
-    if(cid&&!fc.querySelector('option[value="'+cid+'"]')){
-      const o=document.createElement("option");o.value=cid;o.textContent=cid;
-      const anchor=fc.querySelector('option[value="__new__"]');
-      anchor?fc.insertBefore(o,anchor):fc.appendChild(o);
+  const btn=document.querySelector('.tl-item [data-edit="'+CSS.escape(id)+'"]');
+  if(!btn)return;
+  const cardEl=btn.closest('.tl-item');
+  const cardInner=cardEl.querySelector('.tl-card');
+  // 同一张卡再次点击「编辑」→ 收起
+  if(cardInner.querySelector('.tl-inline-edit')){ cardInner.querySelector('.tl-inline-edit').remove(); return; }
+  // 关闭其它已展开的就地编辑器
+  $$('.tl-inline-edit').forEach(p=>p.remove());
+  const fields=buildInlineFields(s, IS_COACH(), sup);
+  let html='<div class="tl-inline-edit"><div class="ie-head">编辑 · '+esc(sup?(s.s_focus||s.sup_client||"督导"):(s.topic||s.date))+'</div>';
+  fields.forEach(f=>{
+    const v=esc(s[f.key]||"");
+    if(f.type==="date"){
+      html+='<div class="ie-row"><label>'+f.label+'</label><input type="date" class="ie-f" data-k="'+f.key+'" value="'+v+'"></div>';
+    }else if(f.type==="text"){
+      html+='<div class="ie-row"><label>'+f.label+'</label><input type="text" class="ie-f" data-k="'+f.key+'" placeholder="'+esc(f.ph||"")+'" value="'+v+'"></div>';
+    }else{
+      html+='<div class="ie-row"><label>'+f.label+'</label><textarea class="ie-f" data-k="'+f.key+'" rows="'+(f.rows||3)+'" placeholder="'+esc(f.ph||"")+'">'+v+'</textarea></div>';
     }
-    fc.value=cid;
-    $("#fClientNew").value="";
-    toggleNewClient();
-    $("#fFollow").value=s.follow||"";
-    $("#fPlan").value=s.plan||"";
-    if(sup){$("#fSupFeedback").value=s.s_feedback||"";$("#fSupClient").value=s.sup_client||"";}
-    else{
-      $("#fTopic").value=s.topic||"";
-      $("#fFeedback").value=s.feedback||"";
-      $("#fEval").value=s.eval||"";
-      $("#fAction").value=s.action||"";
-      $("#fActionBlock").value=s.action_block||"";
-      $("#fActionDue").value=s.action_due||"";
-      $("#fTestimonial").value=s.testimonial||"";
-      $("#fTags").value=(s.tags||[]).join(", ");
-    }
-    $("#btnSubmit").textContent="保存修改";$("#btnCancel").classList.remove("hidden");
-    $("#formSub").textContent="正在编辑：「"+(sup?"":(s.topic||""))+"」";
-    goTarget("add");
-  }else{
-    // 客户视图：只显示客户可编辑字段（觉察收获 / 未完成原因 / 督导后反馈 / 客户反馈）
-    $("#sessionForm").classList.add("client-mode");
-    $("#fFeedback").value=s.feedback||"";
-    $("#fActionBlock").value=s.action_block||"";
-    $("#fTestimonial").value=s.testimonial||"";
-    if(sup)$("#fSupFeedback").value=s.s_feedback||"";
-    $("#btnSubmit").textContent="保存反馈";$("#btnCancel").classList.remove("hidden");
-    $("#formSub").textContent="补充或修改你在这次对话中的反馈内容";
-    $("#add").classList.remove("hidden");
-    goTarget("add");
-  }
+  });
+  html+='<div class="ie-actions"><button class="btn sm primary" data-iesave>'+ICON.check+'保存</button><button class="btn sm ghost" data-iecancel>取消</button></div></div>';
+  cardInner.insertAdjacentHTML('beforeend', html);
+  const panel=cardInner.querySelector('.tl-inline-edit');
+  // 仅当面板不在视口内时最小化滚动，绝不跳到页面底部
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  panel.querySelector('[data-iesave]').addEventListener('click',async()=>{
+    const rec={};
+    panel.querySelectorAll('.ie-f').forEach(inp=>{
+      const val=inp.value.trim();
+      rec[inp.dataset.k]= val===""?(inp.type==="date"?null:""):val;
+    });
+    if(!sup && !rec.topic && IS_COACH()){ alert("请填写对话主题"); return; }
+    if('tags' in rec){ rec.tags=rec.tags.split(/[,，\s]+/).map(t=>t.trim()).filter(Boolean); }
+    const old={...s};
+    Object.assign(s, rec);
+    try{ await sbUpdate(id, rec); }
+    catch(e){ if(handleErr(e))return; Object.assign(s, old); renderTimeline(); alert("保存失败，请重试"); return; }
+    renderTimeline(); renderOverview();
+  });
+  panel.querySelector('[data-iecancel]').addEventListener('click',()=>renderTimeline());
 }
 
 $("#sessionForm").addEventListener('submit',async e=>{
