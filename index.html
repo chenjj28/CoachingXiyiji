@@ -169,6 +169,19 @@
   .follow.coach-note .ft{color:var(--brand2)}
   .follow.testimonial{background:var(--tint-accent);border:1px solid #F0D9C0;border-left:3px solid var(--accent);color:var(--accent)}
   .follow.testimonial .ft{color:var(--accent)}
+  /* 客户编辑留痕：卡片徽标 + 顶部「客户最近更新」 */
+  .ce-badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;color:var(--accent);background:rgba(201,111,74,.12);border:1px solid rgba(201,111,74,.32);border-radius:999px;padding:2px 8px;margin-left:6px;white-space:nowrap}
+  .ce-badge.unread{color:#B54708;background:#FFF4E5;border-color:#F0A85A;box-shadow:0 0 0 2px rgba(240,168,90,.18)}
+  #clientEdits .sub{margin-bottom:10px}
+  .ce-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .ce-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .ce-item.unread{border-color:#F0A85A;background:#FFFAF3}
+  .ce-dot{width:8px;height:8px;border-radius:50%;background:#CBD5E1;flex:none}
+  .ce-item.unread .ce-dot{background:#F0A85A;box-shadow:0 0 0 3px rgba(240,168,90,.22)}
+  .ce-body{flex:1;min-width:0}
+  .ce-t{font-weight:600;font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ce-m{font-size:12px;color:var(--muted);margin-top:2px}
+  .ce-item .tl-cid{margin-left:6px}
   .tl-inline-edit{margin-top:12px;padding:14px;background:var(--tint-brand);border:1px solid #CFD9E8;border-left:3px solid var(--brand);border-radius:12px}
   .tl-inline-edit .ie-head{font-size:13px;font-weight:700;color:var(--brand2);margin-bottom:10px}
   .tl-inline-edit .ie-row{margin-bottom:10px}
@@ -346,6 +359,8 @@
 
     <div class="wrap">
       <section id="today" class="today"></section>
+
+      <section id="clientEdits" class="card hidden"></section>
 
       <section id="clientBar" class="card hidden">
         <div class="client-pick">
@@ -684,6 +699,48 @@ function renderToday(){
   $$('#today [data-done]').forEach(b=>b.addEventListener('click',()=>markDone(b.dataset.done)));
   $$('#today [data-edit]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.edit)));
 }
+/* ---------- 客户编辑留痕（轻量） ---------- */
+// 友好日期：M月D日
+function fmtMD(ts){ if(!ts)return""; const d=new Date(ts); return (d.getMonth()+1)+"月"+d.getDate()+"日"; }
+// 是否「客户改了、教练还没看」
+function isUnseen(s){
+  if(s.last_editor!=='client')return false;
+  if(!s.coach_seen_at)return true;
+  return new Date(s.coach_seen_at).getTime() < new Date(s.updated_at).getTime();
+}
+// 教练视图卡片上的「客户修改」徽标
+function clientEditBadge(s){
+  if(!IS_COACH()||s.last_editor!=='client')return "";
+  return '<span class="ce-badge'+(isUnseen(s)?" unread":"")+'">客户 '+fmtMD(s.updated_at)+'修改</span>';
+}
+// 顶部「客户最近更新」置顶区（仅教练视图）
+function renderClientEdits(){
+  const el=$("#clientEdits");
+  if(!IS_COACH()){ el.classList.add("hidden"); el.innerHTML=""; return; }
+  const list=sessions.filter(s=>s.last_editor==='client')
+    .sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at)).slice(0,8);
+  if(list.length===0){ el.classList.add("hidden"); el.innerHTML=""; return; }
+  const unread=list.filter(isUnseen).length;
+  let html='<h2>'+ICON.edit+'客户最近更新<span class="pill">'+(unread?(unread+" 条未读"):"已全部查看")+'</span></h2>'+
+    '<p class="sub">客户在你授权的字段（觉察收获 / 未完成原因 / 客户反馈 / 督导后反馈）上的修改，按修改时间倒序</p>'+
+    '<div class="ce-list">';
+  list.forEach(s=>{
+    const sup=(s.type||"coach")==="supervise";
+    const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"");
+    const cid=(CUR_CLIENT==="all"&&s.client_id)?'<span class="tl-cid">'+esc(s.client_id)+'</span>':'';
+    const unseen=isUnseen(s);
+    html+='<div class="ce-item'+(unseen?" unread":"")+'">'+
+      '<div class="ce-dot"></div>'+
+      '<div class="ce-body"><div class="ce-t">'+esc(title)+cid+'</div>'+
+      '<div class="ce-m">'+TYPE_LABEL[s.type||"coach"]+' · 修改于 '+fmtMD(s.updated_at)+'</div></div>'+
+      '<button class="btn sm" data-ce="'+esc(s.id)+'">查看</button>'+
+    '</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html; el.classList.remove("hidden");
+  $$('#clientEdits [data-ce]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.ce)));
+}
+
 async function markDone(id){
   const s=sessions.find(x=>x.id===id);if(!s)return;
   s.action_done=true;
@@ -904,7 +961,7 @@ function maybeTip(){
 
 /* ---------- 渲染全部 ---------- */
 async function renderAll(){
-  renderToday();renderFilters();renderDateNav();renderTimeline();renderOverview();maybeTip();
+  renderToday();renderFilters();renderDateNav();renderTimeline();renderOverview();renderClientEdits();maybeTip();
   $("#clientTitle").childNodes[0].nodeValue = IS_COACH()
     ? "洗衣机教练 · 成长陪伴台"
     : (ME.client_id||"客户")+" 的成长陪伴台";
@@ -1004,6 +1061,11 @@ function editSession(id){
   const panel=cardInner.querySelector('.tl-inline-edit');
   // 仅当面板不在视口内时最小化滚动，绝不跳到页面底部
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // 教练打开即视为「已查看」：标记 coach_seen_at（乐观更新本地 + 后台写库）
+  if(IS_COACH()){
+    s.coach_seen_at=new Date().toISOString();
+    sbUpdate(id,{coach_seen_at:s.coach_seen_at}).catch(()=>{});
+  }
   panel.querySelector('[data-iesave]').addEventListener('click',async()=>{
     const rec={};
     panel.querySelectorAll('.ie-f').forEach(inp=>{
@@ -1012,6 +1074,8 @@ function editSession(id){
     });
     if(!sup && !rec.topic && IS_COACH()){ alert("请填写对话主题"); return; }
     if('tags' in rec){ rec.tags=rec.tags.split(/[,，\s]+/).map(t=>t.trim()).filter(Boolean); }
+    rec.last_editor=ME.role;                 // 记录是谁改的
+    if(IS_COACH())rec.coach_seen_at=new Date().toISOString();  // 教练自己改的，自然已读
     const old={...s};
     Object.assign(s, rec);
     try{ await sbUpdate(id, rec); }
@@ -1030,6 +1094,7 @@ $("#sessionForm").addEventListener('submit',async e=>{
     const rec={};
     if((s.type||"coach")==="supervise"){ rec.s_feedback=$("#fSupFeedback").value.trim(); }
     else { rec.feedback=$("#fFeedback").value.trim(); rec.action_block=$("#fActionBlock").value.trim(); rec.testimonial=$("#fTestimonial").value.trim(); }
+    rec.last_editor="client";   // 客户在底部表单保存反馈，标记为客户编辑（coach_seen_at 不刷新 → 教练视图显示未读）
     try{ await sbUpdate(id,rec); }
     catch(err){ if(handleErr(err))return; alert(err.message||"保存失败，请重试"); return; }
     $("#add").classList.add("hidden");
@@ -1046,7 +1111,8 @@ $("#sessionForm").addEventListener('submit',async e=>{
     type:isSup?"supervise":"coach",
     follow:$("#fFollow").value.trim(),
     plan:$("#fPlan").value||null,
-    action_done:$("#editId").value?(sessions.find(x=>x.id===$("#editId").value)?.action_done??false):false
+    action_done:$("#editId").value?(sessions.find(x=>x.id===$("#editId").value)?.action_done??false):false,
+    last_editor:"coach", coach_seen_at:new Date().toISOString()   // 教练填写/编辑 → 标记教练、已读
   };
   if(isSup){
     rec.s_feedback=$("#fSupFeedback").value.trim();
