@@ -425,11 +425,11 @@
             </div>
             <div class="field" data-coach>
               <label>行动承诺 <span class="hint">（客户这次承诺要做的事，会出现在「今日关注」）</span></label>
-              <textarea id="fAction" placeholder="例如：周一与家人同步生育计划"></textarea>
+              <textarea id="fAction" placeholder="例如：本周完成一次主动沟通"></textarea>
             </div>
             <div class="field">
               <label>行动未完成原因 <span class="hint">（可选，行动没做时的阻碍说明）</span></label>
-              <textarea id="fActionBlock" placeholder="例如：因出差推迟、家人没回应……"></textarea>
+              <textarea id="fActionBlock" placeholder="例如：因临时事务推迟……"></textarea>
             </div>
             <div class="field" data-coach>
               <label>行动截止日 <span class="hint">（可选，会显示在「今日关注」；留空即无截止日）</span></label>
@@ -447,12 +447,12 @@
 
           <div id="grpSup" class="hidden">
             <div class="field" data-coach>
-              <label>教练客户 <span class="hint">（受督导者当时所带客户，如 亢亢 / 暖暖 / 晨晨 / 玉雪）</span></label>
+              <label>教练客户 <span class="hint">（受督导者本次督导所围绕的客户，可用代号或姓名）</span></label>
               <input type="text" id="fSupClient" placeholder="受督导教练本次对话服务的客户 ID" maxlength="40">
             </div>
             <div class="field">
-              <label>督导后反馈 <span class="hint">（教练与客户都可填写 / 修改——这是督导后的共同反馈）</span></label>
-              <textarea id="fSupFeedback" placeholder="督导后，客户或教练的反馈、触动、下一步……"></textarea>
+              <label>督导后反馈 <span class="hint">（这是客户写的反馈，由客户在「编辑」中填写 / 修改）</span></label>
+              <textarea id="fSupFeedback" placeholder="督导后，客户的反馈、触动、下一步……"></textarea>
             </div>
             <div class="field" data-coach>
               <label>成长关键词 <span class="hint">（用空格或逗号分隔；会出现在「成长概览 · 督导」）</span></label>
@@ -619,20 +619,78 @@ async function sbListClients(){
   return await r.json();
 }
 async function sbInsert(rows){
-  const r=await fetch(SUPABASE.URL+"/rest/v1/sessions",{
-    method:"POST",headers:{...hd(),"Prefer":"return=representation"},
-    body:JSON.stringify(rows)
-  });
-  if(r.status===401)throw {auth:true};
-  if(!r.ok){let m="";try{const j=await r.json();m=j.message||j.hint||"";}catch(e){}throw new Error(m||("保存失败（HTTP "+r.status+"）"));}
-  return await r.json();
+  try{
+    const r=await fetch(SUPABASE.URL+"/rest/v1/sessions",{
+      method:"POST",headers:{...hd(),"Prefer":"return=representation"},
+      body:JSON.stringify(rows)
+    });
+    if(r.status===401)throw {auth:true};
+    if(!r.ok){let m="";try{const j=await r.json();m=j.message||j.hint||"";}catch(e){}throw new Error(m||("保存失败（HTTP "+r.status+"）"));}
+    return await r.json();
+  }catch(e){
+    const raw=(e&&e.message)||"";
+    const msg=raw.toLowerCase();
+    // 与 sbUpdate 同理：缺列时剥离该列重试，保证新增记录能写入
+    if(msg.includes("does not exist") && msg.includes("column") && Array.isArray(rows) && rows.length){
+      const mm=raw.match(/column "([^"]+)" of relation/i)||raw.match(/'(\w+)' column of/i)||raw.match(/column "([^"]+)" does not exist/i);
+      if(mm){
+        const col=mm[1];
+        const stripped=rows.map(rw=>{const c={...rw}; delete c[col]; return c;});
+        console.warn("[sbInsert] 数据库缺少列「"+col+"」，本次已跳过该列（请跑 sessions_ensure_columns.sql 补齐）");
+        return await sbInsert(stripped);
+      }
+    }
+    throw e;
+  }
 }
-async function sbUpdate(id,rec){
+/* 诊断：读 PostgREST OpenAPI，返回 sessions 表里「应用要写但库里没有」的列 */
+async function sbMissingCols(want){
+  try{
+    const r=await fetch(SUPABASE.URL+"/rest/v1/",{headers:{"apikey":SUPABASE.ANON,"Authorization":"Bearer "+TOKEN}});
+    if(!r.ok)return null;
+    const j=await r.json();
+    const props=(j.definitions&&j.definitions.sessions&&j.definitions.sessions.properties)||null;
+    if(!props)return null;
+    return want.filter(c=>!(c in props));
+  }catch(e){ return null; }
+}
+async function diagTip(rec){
+  try{
+    const miss=await sbMissingCols(Object.keys(rec||{}));
+    if(miss&&miss.length)return "\n\n【诊断】数据库缺少列："+miss.join("、")+"\n请在 Supabase 跑 sessions_ensure_columns.sql；若已跑过仍报错，到 Settings→API 清一次 schema cache（或等几分钟让 PostgREST 刷新）。";
+  }catch(e){}
+  return "";
+}
+async function patchSession(id,rec){
   const r=await fetch(SUPABASE.URL+"/rest/v1/sessions?id=eq."+encodeURIComponent(id),{
     method:"PATCH",headers:hd(),body:JSON.stringify(rec)
   });
   if(r.status===401)throw {auth:true};
-  if(!r.ok){let m="";try{const j=await r.json();m=j.message||j.hint||"";}catch(e){}throw new Error(m||("更新失败（HTTP "+r.status+"）"));}
+  if(!r.ok){
+    let m="";
+    try{const t=await r.text();try{const j=JSON.parse(t);m=j.message||j.hint||j.details||"";}catch(_){m=t.slice(0,300);}}catch(e){}
+    throw new Error(m||("更新失败（HTTP "+r.status+"）"));
+  }
+}
+async function sbUpdate(id,rec){
+  try{ return await patchSession(id,rec); }
+  catch(e){
+    const raw=(e&&e.message)||"";
+    const msg=raw.toLowerCase();
+    // 数据库若未跑全 ALTER、缺某列，PATCH 会报「column X of relation does not exist」。
+    // 解析出具体缺的列并剥离后重试，保证主内容能保存；缺失列稍后跑 sessions_ensure_columns.sql 补齐即可。
+    if(msg.includes("does not exist") && msg.includes("column")){
+      const m=raw.match(/column "([^"]+)" of relation/i)||raw.match(/'(\w+)' column of/i)||raw.match(/column "([^"]+)" does not exist/i);
+      if(m){
+        const col=m[1];
+        const stripped={...rec}; delete stripped[col];
+        if(Object.keys(stripped).length===0) throw e;   // 已无可写列，如实抛出
+        console.warn("[sbUpdate] 数据库缺少列「"+col+"」，本次已跳过该列（请跑 sessions_ensure_columns.sql 补齐，否则该字段内容不会被保存）");
+        return await sbUpdate(id,stripped);
+      }
+    }
+    throw e;
+  }
 }
 async function sbDelete(id){
   const r=await fetch(SUPABASE.URL+"/rest/v1/sessions?id=eq."+encodeURIComponent(id),{
@@ -1010,30 +1068,30 @@ function buildInlineFields(s, isCoach, sup){
   if(sup){
     if(isCoach) return [
       {key:'s_focus',label:'督导聚焦',ph:'本次督导聚焦的方向 / 议题',rows:2},
-      {key:'s_feedback',label:'督导后反馈',ph:'督导后，客户或教练的反馈、触动、下一步……',rows:3},
+      {key:'s_feedback',label:'督导后反馈',ph:'督导后，客户的反馈、触动、下一步……',rows:3},
       {key:'sup_client',label:'教练客户',type:'text',ph:'受督导教练本次对话服务的客户 ID'},
       {key:'tags',label:'标签',type:'text',ph:'自我觉察, 行动力'},
       {key:'follow',label:'下一步关注重点',ph:'留给受督导者下次要聚焦的方向',rows:2},
-      {key:'plan',label:'计划',type:'text',ph:'计划'}
+      {key:'plan',label:'计划',type:'date',ph:'计划'}
     ];
-    return [{key:'s_feedback',label:'督导后反馈',ph:'督导后，客户或教练的反馈、触动、下一步……',rows:3}];
+    return [{key:'s_feedback',label:'督导后反馈',ph:'督导后，客户的反馈、触动、下一步……',rows:3}];
   }
   if(isCoach) return [
     {key:'topic',label:'对话主题',type:'text',ph:'本次对话的主题，一句话概括'},
     {key:'feedback',label:'觉察收获',ph:'客户当次的感受、情绪、触动，以及这次的核心觉察、顿悟、新认知……',rows:4},
     {key:'eval',label:'教练反馈',ph:'你的观察、阶段反馈……',rows:3},
-    {key:'action',label:'行动承诺',ph:'例如：周一与家人同步生育计划',rows:2},
-    {key:'action_block',label:'未完成原因',ph:'例如：因出差推迟、家人没回应……',rows:2},
+    {key:'action',label:'行动承诺',ph:'例如：本周完成一次主动沟通',rows:2},
+    {key:'action_block',label:'未完成原因',ph:'例如：因临时事务推迟……',rows:2},
     {key:'action_due',label:'行动截止日',type:'date'},
     {key:'testimonial',label:'客户反馈',ph:'客户在对话后写的反馈、好评……',rows:3},
     {key:'tags',label:'标签',type:'text',ph:'自我觉察, 行动力'},
     {key:'follow',label:'下次关注',ph:'下次对话前你自己要关注、要谈的点',rows:2},
-    {key:'plan',label:'计划',type:'text',ph:'计划'}
+    {key:'plan',label:'计划',type:'date',ph:'计划'}
   ];
   // 客户视图：仅可编辑的字段（觉察收获 / 未完成原因 / 客户反馈；督导则督导后反馈）
   return [
     {key:'feedback',label:'觉察收获',ph:'客户当次的感受、情绪、触动，以及这次的核心觉察、顿悟、新认知……',rows:4},
-    {key:'action_block',label:'未完成原因',ph:'例如：因出差推迟、家人没回应……',rows:2},
+    {key:'action_block',label:'未完成原因',ph:'例如：因临时事务推迟……',rows:2},
     {key:'testimonial',label:'客户反馈',ph:'客户在对话后写的反馈、好评……',rows:3}
   ];
 }
@@ -1078,14 +1136,18 @@ function editSession(id){
       const val=inp.value.trim();
       rec[inp.dataset.k]= val===""?(inp.type==="date"?null:""):val;
     });
+    // 日期列（plan/action_due/date）空值必须转 null：传空字符串会让 Postgres 报
+    // 「invalid input syntax for type date: ""」。plan 过去在编辑面板里是 type=text，
+    // 上面那行只对 type=date 生效，导致 plan 漏成 "" 而整条保存失败，这里统一兜底。
+    ["plan","action_due","date"].forEach(k=>{ if(rec[k]==="")rec[k]=null; });
     if(!sup && !rec.topic && IS_COACH()){ alert("请填写对话主题"); return; }
     if('tags' in rec){ rec.tags=rec.tags.split(/[,，\s]+/).map(t=>t.trim()).filter(Boolean); }
-    rec.last_editor=ME.role;                 // 记录是谁改的
+    rec.last_editor=IS_COACH()?"coach":"client";   // 记录是谁改的（不依赖 ME.role 字段名）
     if(IS_COACH())rec.coach_seen_at=new Date().toISOString();  // 教练自己改的，自然已读
     const old={...s};
     Object.assign(s, rec);
     try{ await sbUpdate(id, rec); }
-    catch(e){ if(handleErr(e))return; Object.assign(s, old); renderTimeline(); alert("保存失败，请重试"); return; }
+    catch(e){ if(handleErr(e))return; Object.assign(s, old); renderTimeline(); alert("保存失败："+(e.message||"未知错误")+(await diagTip(rec))); return; }
     renderTimeline(); renderOverview();
   });
   panel.querySelector('[data-iecancel]').addEventListener('click',()=>renderTimeline());
@@ -1102,7 +1164,7 @@ $("#sessionForm").addEventListener('submit',async e=>{
     else { rec.feedback=$("#fFeedback").value.trim(); rec.action_block=$("#fActionBlock").value.trim(); rec.testimonial=$("#fTestimonial").value.trim(); }
     rec.last_editor="client";   // 客户在底部表单保存反馈，标记为客户编辑（coach_seen_at 不刷新 → 教练视图显示未读）
     try{ await sbUpdate(id,rec); }
-    catch(err){ if(handleErr(err))return; alert(err.message||"保存失败，请重试"); return; }
+    catch(err){ if(handleErr(err))return; alert((err.message||"保存失败，请重试")+(await diagTip(rec))); return; }
     $("#add").classList.add("hidden");
     resetForm(); await reload(); goTarget("timeline"); return;
   }
@@ -1138,7 +1200,7 @@ $("#sessionForm").addEventListener('submit',async e=>{
   try{
     if(id){await sbUpdate(id,rec);}
     else{await sbInsert([rec]);}
-  }catch(err){if(handleErr(err))return;alert(err.message||"保存失败，请重试");return;}
+  }catch(err){if(handleErr(err))return;alert((err.message||"保存失败，请重试")+(await diagTip(rec)));return;}
   CUR_CLIENT=cid;
   resetForm();await reload();goTarget("timeline");
 });
