@@ -454,6 +454,10 @@
               <label>督导后反馈 <span class="hint">（教练与客户都可填写 / 修改——这是督导后的共同反馈）</span></label>
               <textarea id="fSupFeedback" placeholder="督导后，客户或教练的反馈、触动、下一步……"></textarea>
             </div>
+            <div class="field" data-coach>
+              <label>成长关键词 <span class="hint">（用空格或逗号分隔；会出现在「成长概览 · 督导」）</span></label>
+              <input type="text" id="fSupTags" placeholder="自我觉察, 行动力">
+            </div>
           </div>
 
           <div class="grid2">
@@ -826,6 +830,7 @@ function renderTimeline(){
     const sup=(s.type||"coach")==="supervise";
     const typeBadge='<span class="tl-type '+(sup?"supervise":"coach")+'">'+TYPE_LABEL[s.type||"coach"]+'</span>';
     const cidTag=(IS_COACH()&&CUR_CLIENT==="all"&&s.client_id)?'<span class="tl-cid">'+esc(s.client_id)+'</span>':'';
+    const ceBadge=clientEditBadge(s);
     const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"");
     const tags=(s.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("");
     let bodyRows="";
@@ -859,7 +864,7 @@ function renderTimeline(){
         (canEdit?'<button class="btn sm danger" data-del="'+esc(s.id)+'">'+ICON.trash+'删除</button>':'')+
       '</div>'):"";
     return '<div class="tl-item'+(sup?" sup":"")+'"><div class="tl-card">'+
-      '<div class="tl-head"><div class="tl-meta"><span class="tl-date">'+esc(s.date)+'</span>'+typeBadge+cidTag+'</div><span class="tl-topic">'+esc(title)+'</span></div>'+
+      '<div class="tl-head"><div class="tl-meta"><span class="tl-date">'+esc(s.date)+'</span>'+typeBadge+cidTag+ceBadge+'</div><span class="tl-topic">'+esc(title)+'</span></div>'+
       bodyRows+
       actionHtml+
       followHtml+
@@ -1007,6 +1012,7 @@ function buildInlineFields(s, isCoach, sup){
       {key:'s_focus',label:'督导聚焦',ph:'本次督导聚焦的方向 / 议题',rows:2},
       {key:'s_feedback',label:'督导后反馈',ph:'督导后，客户或教练的反馈、触动、下一步……',rows:3},
       {key:'sup_client',label:'教练客户',type:'text',ph:'受督导教练本次对话服务的客户 ID'},
+      {key:'tags',label:'标签',type:'text',ph:'自我觉察, 行动力'},
       {key:'follow',label:'下一步关注重点',ph:'留给受督导者下次要聚焦的方向',rows:2},
       {key:'plan',label:'计划',type:'text',ph:'计划'}
     ];
@@ -1117,6 +1123,7 @@ $("#sessionForm").addEventListener('submit',async e=>{
   if(isSup){
     rec.s_feedback=$("#fSupFeedback").value.trim();
     rec.sup_client=$("#fSupClient").value.trim();
+    rec.tags=$("#fSupTags").value.split(/[,，\s]+/).map(t=>t.trim()).filter(Boolean);
   }else{
     rec.topic=$("#fTopic").value.trim();
     rec.feedback=$("#fFeedback").value.trim();
