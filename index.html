@@ -182,6 +182,17 @@
   .ce-t{font-weight:600;font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ce-m{font-size:12px;color:var(--muted);margin-top:2px}
   .ce-item .tl-cid{margin-left:6px}
+  /* 客户改动：字段高亮 + 只读预览 */
+  .ce-acts{display:flex;gap:6px;flex:none}
+  .ce-fields{margin-top:8px;padding:8px 10px;background:#FFFAF3;border:1px dashed #F0D9C0;border-radius:9px}
+  .ce-field{font-size:12.5px;color:var(--ink);line-height:1.7}
+  .ce-field+.ce-field{margin-top:4px}
+  .ce-fk{display:inline-block;min-width:64px;font-weight:600;color:var(--accent);margin-right:6px}
+  .ce-fv s{color:var(--muted);text-decoration:line-through}
+  .ce-fallback{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.7}
+  .fl-hit{background:rgba(240,168,90,.10);border-radius:8px;box-shadow:inset 3px 0 0 #F0A85A;padding:6px 10px;margin:6px 0;transition:background .3s}
+  .fl-hit.flash{background:rgba(240,168,90,.30);box-shadow:inset 3px 0 0 #E07A2F,0 0 0 3px rgba(240,168,90,.25)}
+  .btn.ghost.sm{background:transparent;border-color:var(--line)}
   .tl-inline-edit{margin-top:12px;padding:14px;background:var(--tint-brand);border:1px solid #CFD9E8;border-left:3px solid var(--brand);border-radius:12px}
   .tl-inline-edit .ie-head{font-size:13px;font-weight:700;color:var(--brand2);margin-bottom:10px}
   .tl-inline-edit .ie-row{margin-bottom:10px}
@@ -392,7 +403,7 @@
         <form id="sessionForm">
           <input type="hidden" id="editId">
           <div class="grid2">
-            <div class="field" data-coach>
+            <div class="field">
               <label>对话日期</label>
               <input type="date" id="fDate" required>
             </div>
@@ -411,8 +422,8 @@
           </div>
 
           <div id="grpCoach">
-            <div class="field" data-coach>
-              <label>对话主题</label>
+            <div class="field">
+              <label id="lblTopic">对话主题</label>
               <input type="text" id="fTopic" placeholder="例如：职业转型方向的初步探索" maxlength="60">
             </div>
             <div class="field">
@@ -423,15 +434,15 @@
               <label>教练反馈 <span class="hint">（不是评判，而是你作为教练的观察、阶段反馈）</span></label>
               <textarea id="fEval" placeholder="你的观察、阶段反馈……"></textarea>
             </div>
-            <div class="field" data-coach>
+            <div class="field">
               <label>行动承诺 <span class="hint">（客户这次承诺要做的事，会出现在「今日关注」）</span></label>
               <textarea id="fAction" placeholder="例如：本周完成一次主动沟通"></textarea>
             </div>
-            <div class="field">
+            <div class="field" data-coach>
               <label>行动未完成原因 <span class="hint">（可选，行动没做时的阻碍说明）</span></label>
               <textarea id="fActionBlock" placeholder="例如：因临时事务推迟……"></textarea>
             </div>
-            <div class="field" data-coach>
+            <div class="field">
               <label>行动截止日 <span class="hint">（可选，会显示在「今日关注」；留空即无截止日）</span></label>
               <input type="date" id="fActionDue">
             </div>
@@ -773,9 +784,13 @@ function isUnseen(s){
 // 教练视图卡片上的「客户修改」徽标
 function clientEditBadge(s){
   if(!IS_COACH()||s.last_editor!=='client')return "";
-  return '<span class="ce-badge'+(isUnseen(s)?" unread":"")+'">客户 '+fmtMD(s.updated_at)+'修改</span>';
+  const ks=fieldChanges(s).map(k=>FIELDLABEL[k]);
+  // prev_values 是空对象 = 客户自己新增的记录，不是改动旧记录
+  const isNew=!!s.prev_values&&typeof s.prev_values==="object"&&!Array.isArray(s.prev_values)&&Object.keys(s.prev_values).length===0;
+  const what=isNew?("新增了"+(ks.length?ks.join("、"):"记录")):(ks.length?("改了"+ks.join("、")):"修改");
+  return '<span class="ce-badge'+(isUnseen(s)?" unread":"")+'">客户 '+fmtMD(s.updated_at)+' '+esc(what)+'</span>';
 }
-// 顶部「客户最近更新」置顶区（仅教练视图）
+// 顶部「客户最近更新」置顶区（仅教练视图）——只读查看，不进入编辑态
 function renderClientEdits(){
   const el=$("#clientEdits");
   if(!IS_COACH()){ el.classList.add("hidden"); el.innerHTML=""; return; }
@@ -784,23 +799,51 @@ function renderClientEdits(){
   if(list.length===0){ el.classList.add("hidden"); el.innerHTML=""; return; }
   const unread=list.filter(isUnseen).length;
   let html='<h2>'+ICON.edit+'客户最近更新<span class="pill">'+(unread?(unread+" 条未读"):"已全部查看")+'</span></h2>'+
-    '<p class="sub">客户在你授权的字段（觉察收获 / 未完成原因 / 客户反馈 / 督导后反馈）上的修改，按修改时间倒序</p>'+
+    '<p class="sub">客户自己新增的记录，以及客户在你授权的字段（觉察收获 / 未完成原因 / 客户反馈 / 督导后反馈）上的修改。<b>点「查看」只看内容、标为已读</b>；需要改动时再点「编辑」。</p>'+
     '<div class="ce-list">';
   list.forEach(s=>{
     const sup=(s.type||"coach")==="supervise";
-    const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"");
+    const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"—");
     const cid=(CUR_CLIENT==="all"&&s.client_id)?'<span class="tl-cid">'+esc(s.client_id)+'</span>':'';
     const unseen=isUnseen(s);
-    html+='<div class="ce-item'+(unseen?" unread":"")+'">'+
+    // 只读预览：列出客户这次动了哪些字段、现在是什么内容
+    const ks=fieldChanges(s);
+    let lines='';
+    if(ks.length){
+      lines='<div class="ce-fields">'+ks.map(k=>{
+        const prev=(s.prev_values&&s.prev_values[k]!==undefined&&s.prev_values[k]!==null)?String(s.prev_values[k]):"";
+        const now=fieldPreview(s,k);
+        const before=prev?(prev.length>40?prev.slice(0,40)+"…":prev):"（空）";
+        return '<div class="ce-field"><span class="ce-fk">'+esc(FIELDLABEL[k])+'</span>'+
+          '<span class="ce-fv"><s>'+esc(before)+'</s> → '+(now?esc(now):'（已清空）')+'</span></div>';
+      }).join('')+'</div>';
+    }else{
+      lines='<div class="ce-fallback">'+esc(fieldPreview(s,sup?"s_feedback":"feedback")||"（无内容）")+'</div>';
+    }
+    html+='<div class="ce-item'+(unseen?" unread":"")+'" data-ceitem="'+esc(s.id)+'">'+
       '<div class="ce-dot"></div>'+
       '<div class="ce-body"><div class="ce-t">'+esc(title)+cid+'</div>'+
-      '<div class="ce-m">'+TYPE_LABEL[s.type||"coach"]+' · 修改于 '+fmtMD(s.updated_at)+'</div></div>'+
-      '<button class="btn sm" data-ce="'+esc(s.id)+'">查看</button>'+
+      '<div class="ce-m">'+TYPE_LABEL[s.type||"coach"]+' · 修改于 '+fmtMD(s.updated_at)+'</div>'+
+      lines+'</div>'+
+      '<div class="ce-acts">'+
+        '<button class="btn sm" data-ce="'+esc(s.id)+'">查看</button>'+
+        '<button class="btn sm ghost" data-cee="'+esc(s.id)+'">编辑</button>'+
+      '</div>'+
     '</div>';
   });
   html+='</div>';
   el.innerHTML=html; el.classList.remove("hidden");
-  $$('#clientEdits [data-ce]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.ce)));
+  // 查看：跳转到对应卡片 + 高亮改过的字段 + 标为已读，不进入编辑态。
+  // 顺序很关键：先滚动定位（此时列表还是旧的，滚动不被打断），
+  // 再后台标已读，最后只重渲染顶部提示区，刷新未读数。
+  $$('#clientEdits [data-ce]').forEach(b=>b.addEventListener('click',()=>{
+    const id=b.dataset.ce, s=sessions.find(x=>x.id===id);
+    const ks=s?fieldChanges(s):[];
+    focusField(id, ks.length?ks[0]:"");
+    markSeen(id).then(()=>{ renderClientEdits(); });
+  }));
+  // 编辑：只有真的要改时才进编辑态
+  $$('#clientEdits [data-cee]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.cee)));
 }
 
 async function markDone(id){
@@ -889,15 +932,15 @@ function renderTimeline(){
     const typeBadge='<span class="tl-type '+(sup?"supervise":"coach")+'">'+TYPE_LABEL[s.type||"coach"]+'</span>';
     const cidTag=(IS_COACH()&&CUR_CLIENT==="all"&&s.client_id)?'<span class="tl-cid">'+esc(s.client_id)+'</span>':'';
     const ceBadge=clientEditBadge(s);
-    const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"");
+    const title=sup?(s.s_focus||("督导"+(s.sup_client?(" · "+s.sup_client):""))):(s.topic||"—");
     const tags=(s.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("");
     let bodyRows="";
     if(sup){
-      bodyRows+='<div class="follow testimonial"><span class="ft">督导后反馈</span><span class="val">'+(s.s_feedback?nl2br(s.s_feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
-      if(s.sup_client)bodyRows+='<div class="tl-row"><span class="lab">教练客户</span><span class="val">'+esc(s.sup_client)+'</span></div>';
+      bodyRows+=flOpen(s,'s_feedback','follow testimonial')+'<span class="ft">督导后反馈</span><span class="val">'+(s.s_feedback?nl2br(s.s_feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      if(s.sup_client)bodyRows+=flOpen(s,'sup_client','tl-row')+'<span class="lab">教练客户</span><span class="val">'+esc(s.sup_client)+'</span></div>';
     }else{
-      bodyRows+='<div class="tl-row"><span class="lab">觉察收获</span><span class="val">'+(s.feedback?nl2br(s.feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
-      if(s.eval)bodyRows+='<div class="tl-row"><span class="lab">教练反馈</span><span class="val">'+nl2br(s.eval)+'</span></div>';
+      bodyRows+=flOpen(s,'feedback','tl-row')+'<span class="lab">觉察收获</span><span class="val">'+(s.feedback?nl2br(s.feedback):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      if(s.eval)bodyRows+=flOpen(s,'eval','tl-row')+'<span class="lab">教练反馈</span><span class="val">'+nl2br(s.eval)+'</span></div>';
     }
     let actionHtml="";
     if(s.action){
@@ -905,7 +948,7 @@ function renderTimeline(){
       const toggleBtn=canEdit?('<button class="btn sm act-toggle" data-toggle="'+esc(s.id)+'">'+(s.action_done?"撤销":"标记完成")+'</button>'):'';
       actionHtml='<div class="tl-row act-row '+cls+'"><span class="lab">'+(s.action_done?"已行动":"行动承诺")+'</span><span class="val">'+nl2br(s.action)+'</span>'+toggleBtn+'</div>';
       if(!s.action_done){
-        actionHtml+='<div class="tl-row act-row sub"><span class="lab muted">未完成原因</span><span class="val">'+(s.action_block?nl2br(s.action_block):'<span class="ph">（未填写，可在「编辑」中补充）</span>')+'</span></div>';
+        actionHtml+=flOpen(s,'action_block','tl-row act-row sub')+'<span class="lab muted">未完成原因</span><span class="val">'+(s.action_block?nl2br(s.action_block):'<span class="ph">（未填写，可在「编辑」中补充）</span>')+'</span></div>';
       }
     }
     // 教练内部提醒：教练对话仅教练可见；督导的"下一步关注重点"客户可见
@@ -915,7 +958,7 @@ function renderTimeline(){
     }
     let testiHtml="";
     if(s.testimonial||!IS_COACH()){
-      testiHtml='<div class="follow testimonial"><span class="ft">客户反馈</span><span class="val">'+(s.testimonial?nl2br(s.testimonial):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
+      testiHtml=flOpen(s,'testimonial','follow testimonial')+'<span class="ft">客户反馈</span><span class="val">'+(s.testimonial?nl2br(s.testimonial):'<span class="ph">（尚未填写，可在「编辑」中补充）</span>')+'</span></div>';
     }
     const actions=(canEdit||!IS_COACH())?('<div class="tl-actions">'+
         '<button class="btn sm" data-edit="'+esc(s.id)+'">'+ICON.edit+'编辑</button>'+
@@ -1058,9 +1101,11 @@ function resetForm(){
     $("#fClientNew").value="";
     toggleNewClient();
   }
-  $("#btnSubmit").textContent="保存对话";$("#btnCancel").classList.add("hidden");
-  $("#formSub").textContent="填写本次对话的核心内容，保存后会出现在时间线最上方";
-  if(!IS_COACH())$("#add").classList.add("hidden");
+  $("#btnSubmit").textContent=IS_COACH()?"保存对话":"保存记录";
+  $("#btnCancel").classList.add("hidden");
+  $("#formSub").textContent=IS_COACH()
+    ? "填写本次对话的核心内容，保存后会出现在时间线最上方"
+    : "记录你这次的想法、觉察与行动，保存后会出现在时间线最上方";
 }
 $("#btnCancel").addEventListener('click',resetForm);
 
@@ -1094,6 +1139,77 @@ function buildInlineFields(s, isCoach, sup){
     {key:'action_block',label:'未完成原因',ph:'例如：因临时事务推迟……',rows:2},
     {key:'testimonial',label:'客户反馈',ph:'客户在对话后写的反馈、好评……',rows:3}
   ];
+}
+
+/* ---------- 客户改动追踪：谁改了哪些字段、从什么改成什么 ---------- */
+// 字段名 → 中文标签（用于高亮与对比展示）
+const FIELDLABEL={topic:"对话主题",feedback:"觉察收获",eval:"教练反馈",action:"行动承诺",
+  action_block:"未完成原因",action_due:"行动截止日",testimonial:"客户反馈",tags:"标签",
+  follow:"下次关注",plan:"计划",s_focus:"督导重点",s_feedback:"督导后反馈",sup_client:"教练客户"};
+
+// 判断字段值是否真的变了（tags 是数组，需按内容比较）
+function sameVal(a,b){
+  const na=(a===undefined||a===null||a==="")?"":a;
+  const nb=(b===undefined||b===null||b==="")?"":b;
+  if(Array.isArray(na)||Array.isArray(nb)) return JSON.stringify(na||[])===JSON.stringify(nb||[]);
+  return String(na)===String(nb);
+}
+
+// 保存前：算出这次改动了哪些字段，并留下旧值快照
+function diffRec(s, rec){
+  const changed=[], prev={};
+  Object.keys(rec).forEach(k=>{
+    if(k==="last_editor"||k==="coach_seen_at"||k==="last_editor_fields"||k==="prev_values")return;
+    if(!sameVal(s[k], rec[k])){ changed.push(k); prev[k]=(s[k]===undefined?null:s[k]); }
+  });
+  return {changed, prev};
+}
+
+// 该条记录里，客户改动过的字段
+function fieldChanges(s){
+  const f=s.last_editor_fields;
+  if(Array.isArray(f)) return f.filter(k=>FIELDLABEL[k]);
+  if(typeof f==="string"&&f) return f.split(",").map(x=>x.trim()).filter(k=>FIELDLABEL[k]);
+  return [];
+}
+
+// 字段内容预览（截断，用于只读展示）
+function fieldPreview(s,k){
+  let v=s[k];
+  if(Array.isArray(v)) v=v.join("、");
+  v=(v===null||v===undefined)?"":String(v);
+  v=v.trim();
+  if(!v)return"";
+  return v.length>80?v.slice(0,80)+"…":v;
+}
+
+// 字段容器开标签：客户改过的字段加 fl-hit 高亮，并带上 fl-<key> 供定位
+function flOpen(s,key,cls){
+  const hit=(IS_COACH()&&s.last_editor==='client'&&fieldChanges(s).indexOf(key)>=0);
+  return '<div class="'+(cls||"")+(cls?" ":"")+'fl-'+key+(hit?" fl-hit":"")+'">';
+}
+
+// 从「客户最近更新」跳过去时，高亮该卡片改过的字段
+function focusField(id,k){
+  renderTimeline();
+  const card=document.querySelector('.tl-item[data-id="'+CSS.escape(String(id))+'"]');
+  if(!card)return;
+  card.scrollIntoView({behavior:"smooth",block:"center"});
+  const box=k?card.querySelector('.fl-'+k):null;
+  if(!box)return;
+  box.scrollIntoView({behavior:"smooth",block:"center"});
+  box.classList.add("flash");
+  setTimeout(()=>box.classList.remove("flash"),2600);
+}
+
+// 点「查看」：只标已读，不弹任何编辑框。
+// 注意：这里只写数据、不触发任何重渲染（避免渲染函数互调成环，见铁律9）；
+// 界面更新交给调用方（点击处理器）按固定顺序调度。
+async function markSeen(id){
+  const s=sessions.find(x=>x.id===id);
+  if(!s||!IS_COACH())return;
+  s.coach_seen_at=new Date().toISOString();
+  try{ await sbUpdate(id,{coach_seen_at:s.coach_seen_at}); }catch(e){}
 }
 
 /* 就地编辑：在卡片所在位置直接展开编辑面板，不滚动到页面底部 */
@@ -1144,6 +1260,11 @@ function editSession(id){
     if('tags' in rec){ rec.tags=rec.tags.split(/[,，\s]+/).map(t=>t.trim()).filter(Boolean); }
     rec.last_editor=IS_COACH()?"coach":"client";   // 记录是谁改的（不依赖 ME.role 字段名）
     if(IS_COACH())rec.coach_seen_at=new Date().toISOString();  // 教练自己改的，自然已读
+    // 客户改动：记下改了哪些字段 + 旧值快照，供教练视图看「从什么改成什么」
+    if(!IS_COACH()){
+      const df=diffRec(s, rec);
+      if(df.changed.length){ rec.last_editor_fields=df.changed; rec.prev_values=df.prev; }
+    }
     const old={...s};
     Object.assign(s, rec);
     try{ await sbUpdate(id, rec); }
@@ -1157,12 +1278,36 @@ $("#sessionForm").addEventListener('submit',async e=>{
   e.preventDefault();
   if(!IS_COACH()){
     const id=$("#editId").value;
-    if(!id){alert("客户无法直接新增对话，反馈可在下方卡片的「编辑」按钮补充");return;}
+    if(!id){
+      // 客户新增记录：只写客户视角字段。教练专属列（教练反馈/成长关键词/下次关注/计划）
+      // 一律不出现在请求体里；数据库触发器（sessions_client_insert.sql）还会再兜一层。
+      const rec={
+        client_id:ME.client_id, coach_id:COACH_ID,
+        date:$("#fDate").value||todayStr(),
+        type:"coach",
+        topic:$("#fTopic").value.trim(),
+        feedback:$("#fFeedback").value.trim(),
+        action:$("#fAction").value.trim(),
+        action_due:$("#fActionDue").value||null,
+        testimonial:$("#fTestimonial").value.trim(),
+        last_editor:"client",
+        prev_values:{}      // 空对象 = 这条是新增的，不是改动（教练视图据此显示「新增」）
+        // 不写 coach_seen_at：由触发器置空，教练视图显示为「客户新增 · 未读」
+      };
+      if(!rec.feedback&&!rec.testimonial&&!rec.action&&!rec.topic){
+        alert("请至少填写「这次聊了什么 / 觉察收获 / 行动承诺 / 客户反馈」中的一项");return;
+      }
+      rec.last_editor_fields=["topic","feedback","action","action_due","testimonial"].filter(k=>rec[k]);
+      try{ await sbInsert([rec]); }
+      catch(err){ if(handleErr(err))return; alert((err.message||"保存失败，请重试")+(await diagTip(rec))); return; }
+      resetForm(); await reload(); goTarget("timeline"); return;
+    }
     const s=sessions.find(x=>x.id===id);
     const rec={};
     if((s.type||"coach")==="supervise"){ rec.s_feedback=$("#fSupFeedback").value.trim(); }
     else { rec.feedback=$("#fFeedback").value.trim(); rec.action_block=$("#fActionBlock").value.trim(); rec.testimonial=$("#fTestimonial").value.trim(); }
     rec.last_editor="client";   // 客户在底部表单保存反馈，标记为客户编辑（coach_seen_at 不刷新 → 教练视图显示未读）
+    { const df=diffRec(s, rec); if(df.changed.length){ rec.last_editor_fields=df.changed; rec.prev_values=df.prev; } }
     try{ await sbUpdate(id,rec); }
     catch(err){ if(handleErr(err))return; alert((err.message||"保存失败，请重试")+(await diagTip(rec))); return; }
     $("#add").classList.add("hidden");
@@ -1290,13 +1435,20 @@ $$('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
 /* ---------- 登录 / 登出 ---------- */
 function applyRoleUI(){
   const coach=IS_COACH();
-  $("#navCoach").classList.toggle("hidden",!coach);
+  // 客户也能自己新增记录：侧栏入口与表单卡片都保留（督导仍仅教练）
+  $("#navCoach").classList.remove("hidden");
   $("#navSup").classList.toggle("hidden",!coach);
-  $("#add").classList.toggle("hidden",!coach);
+  $("#add").classList.remove("hidden");
   $("#clientBar").classList.toggle("hidden",!coach);
   $("#btnImport").classList.toggle("hidden",!coach);
   $("#btnClear").classList.toggle("hidden",!coach);
   $("#addClientField").classList.toggle("hidden",!coach);
+  // 客户模式下由 CSS 统一隐藏所有教练专属字段（[data-coach]）
+  $("#sessionForm").classList.toggle("client-mode",!coach);
+  if(!coach){
+    const lt=$("#lblTopic"); if(lt) lt.textContent="这次聊了什么";
+    const ft=$("#fTopic");   if(ft) ft.placeholder="例如：关于要不要换工作的这次深聊";
+  }
 }
 async function reload(){
   try{
