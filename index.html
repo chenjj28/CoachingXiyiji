@@ -152,6 +152,7 @@
   .tl-row.sub{margin-left:14px;padding-left:12px;border-left:2px solid var(--line)}
   .act-row.done .lab{color:#2f7d5b}
   .act-row.pending .lab{color:var(--accent)}
+  .duechip{display:inline-block;margin-left:7px;font-size:12px;font-weight:700;color:var(--accent);background:rgba(240,168,90,.14);border:1px solid #F0D9C0;padding:1px 9px;border-radius:20px;vertical-align:middle}
   #sessionForm.client-mode [data-coach]{display:none}
   .ph{color:var(--muted);font-style:italic;opacity:.75}
   .follow .val{flex:1;min-width:0}
@@ -267,6 +268,8 @@
   .login-card .btn{width:100%;justify-content:center;margin-top:6px}
   .login-err{color:var(--red);font-size:13px;margin-top:12px;min-height:18px;text-align:center;font-weight:600}
   .login-note{font-size:11.5px;color:var(--muted);margin-top:14px;text-align:center;line-height:1.5}
+  .login-note a{color:var(--brand2);font-weight:700;text-decoration:none;border-bottom:1px solid currentColor;cursor:pointer}
+  .login-note a:hover{color:var(--brand)}
 
   /* ---------- Client picker (coach) ---------- */
   .client-pick{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -317,6 +320,7 @@
     </div>
     <button class="btn primary" id="lgBtn">登 录</button>
     <div class="login-err" id="lgErr"></div>
+    <div class="login-note"><a id="lgForgot">忘记密码？点这里重设</a></div>
     <div class="login-note">数据云端同步 · 仅你与洗衣机教练可见<br>由洗衣机教练陪伴你的每一次成长</div>
   </div>
 </div>
@@ -526,6 +530,26 @@
     <div class="row">
       <button class="btn ghost" id="pwCancel">取消</button>
       <button class="btn" id="pwSave">保存新密码</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-mask" id="pwdSetModal">
+  <div class="modal">
+    <h3 id="pwdSetTitle">设置你的登录密码</h3>
+    <p id="pwdSetTip">欢迎加入成长陪伴平台。请设置一个只属于你自己的密码——教练不会知道它，也看不到它。</p>
+    <div class="field">
+      <label>新密码（至少 6 位）</label>
+      <input type="password" id="psNew" placeholder="输入新密码" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>确认新密码</label>
+      <input type="password" id="psConfirm" placeholder="再次输入新密码" autocomplete="new-password">
+    </div>
+    <div class="login-err" id="psErr"></div>
+    <div class="row">
+      <button class="btn" id="psSave">设置密码并进入</button>
     </div>
   </div>
 </div>
@@ -779,7 +803,10 @@ function fmtMD(ts){ if(!ts)return""; const d=new Date(ts); return (d.getMonth()+
 function isUnseen(s){
   if(s.last_editor!=='client')return false;
   if(!s.coach_seen_at)return true;
-  return new Date(s.coach_seen_at).getTime() < new Date(s.updated_at).getTime();
+  // 容差 5 秒：coach_seen_at 写的是本机时间，updated_at 是服务器时间，
+  // 两者天生有秒级偏差，直接比较会把「刚看过」误判成「未读」。
+  // 彻底解决靠数据库触发器 05_未读用服务器时间_sessions_seen_at.sql（统一用服务器 now()）。
+  return new Date(s.coach_seen_at).getTime() < new Date(s.updated_at).getTime() - 5000;
 }
 // 教练视图卡片上的「客户修改」徽标
 function clientEditBadge(s){
@@ -839,7 +866,7 @@ function renderClientEdits(){
   $$('#clientEdits [data-ce]').forEach(b=>b.addEventListener('click',()=>{
     const id=b.dataset.ce, s=sessions.find(x=>x.id===id);
     const ks=s?fieldChanges(s):[];
-    focusField(id, ks.length?ks[0]:"");
+    focusField(id, ks);
     markSeen(id).then(()=>{ renderClientEdits(); });
   }));
   // 编辑：只有真的要改时才进编辑态
@@ -946,11 +973,13 @@ function renderTimeline(){
     if(s.action){
       const cls=s.action_done?"done":"pending";
       const toggleBtn=canEdit?('<button class="btn sm act-toggle" data-toggle="'+esc(s.id)+'">'+(s.action_done?"撤销":"标记完成")+'</button>'):'';
-      actionHtml='<div class="tl-row act-row '+cls+'"><span class="lab">'+(s.action_done?"已行动":"行动承诺")+'</span><span class="val">'+nl2br(s.action)+'</span>'+toggleBtn+'</div>';
+      actionHtml='<div class="tl-row act-row '+cls+' fl-action'+flHitCls(s,'action')+'"><span class="lab">'+(s.action_done?"已行动":"行动承诺")+'</span><span class="val">'+nl2br(s.action)+'</span>'+toggleBtn+'</div>';
+      actionHtml+=dueRow(s);
       if(!s.action_done){
         actionHtml+=flOpen(s,'action_block','tl-row act-row sub')+'<span class="lab muted">未完成原因</span><span class="val">'+(s.action_block?nl2br(s.action_block):'<span class="ph">（未填写，可在「编辑」中补充）</span>')+'</span></div>';
       }
     }
+    if(!s.action&&s.action_due){ actionHtml+=dueRow(s); }
     // 教练内部提醒：教练对话仅教练可见；督导的"下一步关注重点"客户可见
     let followHtml="";
     if(s.follow&&(IS_COACH()||sup)){
@@ -964,8 +993,8 @@ function renderTimeline(){
         '<button class="btn sm" data-edit="'+esc(s.id)+'">'+ICON.edit+'编辑</button>'+
         (canEdit?'<button class="btn sm danger" data-del="'+esc(s.id)+'">'+ICON.trash+'删除</button>':'')+
       '</div>'):"";
-    return '<div class="tl-item'+(sup?" sup":"")+'"><div class="tl-card">'+
-      '<div class="tl-head"><div class="tl-meta"><span class="tl-date">'+esc(s.date)+'</span>'+typeBadge+cidTag+ceBadge+'</div><span class="tl-topic">'+esc(title)+'</span></div>'+
+    return '<div class="tl-item'+(sup?" sup":"")+'" data-id="'+esc(s.id)+'"><div class="tl-card">'+
+      '<div class="tl-head"><div class="tl-meta"><span class="tl-date">'+esc(s.date)+'</span>'+typeBadge+cidTag+ceBadge+'</div><span class="tl-topic fl-topic'+flHitCls(s,'topic')+'">'+esc(title)+'</span></div>'+
       bodyRows+
       actionHtml+
       followHtml+
@@ -1183,23 +1212,44 @@ function fieldPreview(s,k){
   return v.length>80?v.slice(0,80)+"…":v;
 }
 
+// 该字段是否属于「客户改过」→ 返回要高亮的 class（非 div 容器也复用）
+function flHitCls(s,key){
+  return (IS_COACH()&&s.last_editor==='client'&&fieldChanges(s).indexOf(key)>=0)?" fl-hit":"";
+}
 // 字段容器开标签：客户改过的字段加 fl-hit 高亮，并带上 fl-<key> 供定位
 function flOpen(s,key,cls){
-  const hit=(IS_COACH()&&s.last_editor==='client'&&fieldChanges(s).indexOf(key)>=0);
-  return '<div class="'+(cls||"")+(cls?" ":"")+'fl-'+key+(hit?" fl-hit":"")+'">';
+  return '<div class="'+(cls||"")+(cls?" ":"")+'fl-'+key+flHitCls(s,key)+'">';
+}
+
+// 行动截止日行：即使没有「行动承诺」也单独渲染，
+// 保证客户只改截止日时「查看」也有可视落点（纯函数，不调任何渲染函数）。
+function dueRow(s){
+  if(!s.action_due)return "";
+  const overdue=!s.action_done && s.action_due<todayStr();
+  return flOpen(s,'action_due','tl-row act-row sub')+'<span class="lab muted">行动截止日</span><span class="val">'+esc(s.action_due)+(overdue?' <span class="duechip">已逾期</span>':'')+'</span></div>';
 }
 
 // 从「客户最近更新」跳过去时，高亮该卡片改过的字段
-function focusField(id,k){
+function focusField(id,keys){
   renderTimeline();
-  const card=document.querySelector('.tl-item[data-id="'+CSS.escape(String(id))+'"]');
-  if(!card)return;
+  let card=document.querySelector('.tl-item[data-id="'+CSS.escape(String(id))+'"]');
+  // 目标记录可能被当前「类型 / 年月」筛选挡住 → 先清筛选再定位，否则点了像没反应
+  if(!card&&(curFilter!=="all"||curYear!=="all"||curMonth!=="all")){
+    curFilter="all";curYear="all";curMonth="all";
+    renderFilters();renderDateNav();renderTimeline();
+    card=document.querySelector('.tl-item[data-id="'+CSS.escape(String(id))+'"]');
+  }
+  if(!card)return false;
   card.scrollIntoView({behavior:"smooth",block:"center"});
-  const box=k?card.querySelector('.fl-'+k):null;
-  if(!box)return;
+  // keys 可以是单个字段名或数组：依次找第一个在卡片里真实存在容器的字段
+  const arr=Array.isArray(keys)?keys:(keys?[keys]:[]);
+  let box=null;
+  for(const k of arr){ box=card.querySelector('.fl-'+CSS.escape(k)); if(box)break; }
+  if(!box)return true;              // 卡片已定位，只是该字段在卡片上没有独立容器
   box.scrollIntoView({behavior:"smooth",block:"center"});
   box.classList.add("flash");
   setTimeout(()=>box.classList.remove("flash"),2600);
+  return true;
 }
 
 // 点「查看」：只标已读，不弹任何编辑框。
@@ -1303,6 +1353,7 @@ $("#sessionForm").addEventListener('submit',async e=>{
       resetForm(); await reload(); goTarget("timeline"); return;
     }
     const s=sessions.find(x=>x.id===id);
+    if(!s){ alert("没找到这条记录，请刷新页面后重试"); return; }
     const rec={};
     if((s.type||"coach")==="supervise"){ rec.s_feedback=$("#fSupFeedback").value.trim(); }
     else { rec.feedback=$("#fFeedback").value.trim(); rec.action_block=$("#fActionBlock").value.trim(); rec.testimonial=$("#fTestimonial").value.trim(); }
@@ -1380,14 +1431,16 @@ $("#fileInput").addEventListener('change',async e=>{
       const d=JSON.parse(r.result);
       if(!d||!Array.isArray(d.sessions))throw 0;
       const cid=IS_COACH()&&CUR_CLIENT&&CUR_CLIENT!=="all"?CUR_CLIENT:"";
+      // 不写 id：带 id 的文件第二次导入会因主键冲突让整批失败。
+      // 现在导入一律「追加为新记录」，绝不覆盖已有数据。
+      if(d.sessions.some(x=>x&&x.id) && !confirm("这份文件带有记录 id（通常来自「导出」）。\n\n为避免与现有记录冲突，导入会把每条都作为【新记录】追加，不会覆盖已有数据。\n\n继续吗？")){e.target.value="";return;}
       const rows=d.sessions.map(x=>({
-        id:x.id,
         client_id:cid||x.client_id||CUR_CLIENT||"unknown",
         coach_id:COACH_ID,
         date:x.date||todayStr(),
         type:x.type||"coach",
         topic:x.topic||"",feedback:x.feedback||"",eval:x.eval||"",tags:x.tags||[],
-        action:x.action||"",action_block:x.action_block||"",testimonial:x.testimonial||"",
+        action:x.action||"",action_block:x.action_block||"",action_due:x.action_due||null,testimonial:x.testimonial||"",
         s_focus:x.s_focus||"",s_feedback:x.s_feedback||"",sup_client:x.sup_client||"",
         follow:x.follow||"",plan:x.plan||null,action_done:!!x.action_done
       }));
@@ -1531,8 +1584,74 @@ $("#pwSave").addEventListener('click',async()=>{
   }
 });
 
+/* ---------- 邮件链接进来后的「设置密码」 ---------- */
+$("#psSave").addEventListener('click',async()=>{
+  const np=$("#psNew").value,cp=$("#psConfirm").value;
+  $("#psErr").textContent="";
+  if(np.length<6){$("#psErr").textContent="密码至少 6 位";return;}
+  if(np!==cp){$("#psErr").textContent="两次输入不一致";return;}
+  const btn=$("#psSave");btn.disabled=true;btn.textContent="保存中…";
+  try{
+    const r=await fetch(SUPABASE.URL+"/auth/v1/user",{method:"PATCH",headers:hd(),body:JSON.stringify({password:np})});
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.msg||j.message||("设置失败（"+r.status+"）"));}
+    $("#pwdSetModal").classList.remove("show");
+    enterApp();
+  }catch(e){
+    $("#psErr").textContent=e.message||"设置失败，请重试";
+  }finally{
+    btn.disabled=false;btn.textContent="设置密码并进入";
+  }
+});
+$("#psNew").addEventListener('keydown',e=>{if(e.key==="Enter")$("#psSave").click();});
+$("#psConfirm").addEventListener('keydown',e=>{if(e.key==="Enter")$("#psSave").click();});
+
+/* ---------- 登录页「忘记密码」 ---------- */
+$("#lgForgot").addEventListener('click',async()=>{
+  const mail=$("#lgEmail").value.trim();
+  const err=$("#lgErr");
+  if(!mail){err.style.color="";err.textContent="请先在上面填好你的邮箱";return;}
+  const a=$("#lgForgot");a.textContent="发送中…";
+  try{
+    const r=await fetch(SUPABASE.URL+"/auth/v1/recover",{method:"POST",
+      headers:{"apikey":SUPABASE.ANON,"Content-Type":"application/json"},
+      body:JSON.stringify({email:mail})});
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.msg||j.message||("发送失败（"+r.status+"）"));}
+    err.style.color="#2E7D5B";
+    err.textContent="重置邮件已发出，请查收（含垃圾箱），点邮件里的链接重设密码";
+  }catch(e){
+    err.style.color="";
+    err.textContent=e.message||"发送失败，请联系洗衣机教练";
+  }finally{
+    a.textContent="忘记密码？点这里重设";
+  }
+});
+
 /* ---------- 初始化 ---------- */
 (function init(){
+  /* 邮件链接（邀请 / 重置密码）会带着令牌回到本页：先认领，再让本人设密码 */
+  const hp=new URLSearchParams((location.hash||"").replace(/^#/,""));
+  const hashTok=hp.get("access_token");
+  if(hashTok){
+    TOKEN=hashTok;
+    const hashType=hp.get("type")||"";
+    localStorage.setItem("wb_sb_token",TOKEN);
+    try{history.replaceState(null,"",location.pathname+location.search);}catch(e){location.hash="";}
+    sbGetUser().then(u=>{
+      ME={role:u.user_metadata&&u.user_metadata.role||"client",
+          client_id:u.user_metadata&&u.user_metadata.client_id||"",
+          email:u.email};
+      localStorage.setItem("wb_sb_me",JSON.stringify(ME));
+      if(hashType==="invite"||hashType==="recovery"){
+        $("#pwdSetTitle").textContent=(hashType==="invite")?"设置你的登录密码":"重设你的登录密码";
+        $("#psErr").textContent="";
+        $("#pwdSetModal").classList.add("show");
+      }else{
+        enterApp();
+      }
+    }).catch(()=>logout("链接已失效，请让教练再发一次"));
+    return;
+  }
+
   TOKEN=localStorage.getItem("wb_sb_token");
   const meStr=localStorage.getItem("wb_sb_me");
   if(TOKEN&&meStr){
