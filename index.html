@@ -183,6 +183,11 @@
   .ce-t{font-weight:600;font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ce-m{font-size:12px;color:var(--muted);margin-top:2px}
   .ce-item .tl-cid{margin-left:6px}
+  /* 「已查」：把一条客户更新从顶部收起 */
+  #clientEdits h2 .pill{margin-left:auto}
+  #clientEdits h2 .ce-clearall{min-height:30px;padding:0 10px;font-size:12.5px;flex:none}
+  #clientEdits .ce-item{flex-wrap:wrap}
+  #clientEdits .ce-acts{flex-wrap:wrap;margin-left:auto}
   /* 客户改动：字段高亮 + 只读预览 */
   .ce-acts{display:flex;gap:6px;flex:none}
   .ce-fields{margin-top:8px;padding:8px 10px;background:#FFFAF3;border:1px dashed #F0D9C0;border-radius:9px}
@@ -802,11 +807,20 @@ function fmtMD(ts){ if(!ts)return""; const d=new Date(ts); return (d.getMonth()+
 // 是否「客户改了、教练还没看」
 function isUnseen(s){
   if(s.last_editor!=='client')return false;
+  if(s._seenLocal)return false;   // 本次会话内刚点过「已查」→ 立刻按已读处理（不受时钟差影响）
   if(!s.coach_seen_at)return true;
   // 容差 5 秒：coach_seen_at 写的是本机时间，updated_at 是服务器时间，
   // 两者天生有秒级偏差，直接比较会把「刚看过」误判成「未读」。
   // 彻底解决靠数据库触发器 05_未读用服务器时间_sessions_seen_at.sql（统一用服务器 now()）。
   return new Date(s.coach_seen_at).getTime() < new Date(s.updated_at).getTime() - 5000;
+}
+
+// 顶部要显示的清单：客户动过、且教练还没点「已查」的（最近更新在前）
+// 说明：「已查」走的就是既有的「已读」机制（coach_seen_at），
+//       客户之后再次改动 → updated_at 变新 → 这条会自动重新回到顶部，不需要手工清理。
+function clientEditList(){
+  return sessions.filter(s=>s.last_editor==='client'&&isUnseen(s))
+    .sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
 }
 // 教练视图卡片上的「客户修改」徽标
 function clientEditBadge(s){
@@ -821,12 +835,15 @@ function clientEditBadge(s){
 function renderClientEdits(){
   const el=$("#clientEdits");
   if(!IS_COACH()){ el.classList.add("hidden"); el.innerHTML=""; return; }
-  const list=sessions.filter(s=>s.last_editor==='client')
-    .sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at)).slice(0,8);
+  const all=clientEditList();        // 客户改过、教练还没点「已查」的
+  const list=all.slice(0,8);
   if(list.length===0){ el.classList.add("hidden"); el.innerHTML=""; return; }
-  const unread=list.filter(isUnseen).length;
-  let html='<h2>'+ICON.edit+'客户最近更新<span class="pill">'+(unread?(unread+" 条未读"):"已全部查看")+'</span></h2>'+
-    '<p class="sub">客户自己新增的记录，以及客户在你授权的字段（觉察收获 / 未完成原因 / 客户反馈 / 督导后反馈）上的修改。<b>点「查看」只看内容、标为已读</b>；需要改动时再点「编辑」。</p>'+
+  const unread=list.length;          // 这里只列「还没看」的，所以都是待看
+  const more=(list.length<all.length)?("（共 "+all.length+" 条，此处显示最近 8 条）"):"";
+  let html='<h2>'+ICON.edit+'客户最近更新<span class="pill">'+unread+' 条待看</span>'+
+    '<button class="btn sm ghost ce-clearall" id="ceClearAll">全部已查</button></h2>'+
+    '<p class="sub">客户自己新增的记录，以及客户在你授权的字段（觉察收获 / 未完成原因 / 客户反馈 / 督导后反馈）上的修改。'+
+    '<b>「查看」= 跳过去看内容（只读）</b>；<b>「已查」= 已处理，从顶部收起</b>（客户之后再改会重新出现在这里）；要改动时点「编辑」。'+more+'</p>'+
     '<div class="ce-list">';
   list.forEach(s=>{
     const sup=(s.type||"coach")==="supervise";
@@ -855,20 +872,28 @@ function renderClientEdits(){
       '<div class="ce-acts">'+
         '<button class="btn sm" data-ce="'+esc(s.id)+'">查看</button>'+
         '<button class="btn sm ghost" data-cee="'+esc(s.id)+'">编辑</button>'+
+        '<button class="btn sm ghost ce-clear" data-ceclear="'+esc(s.id)+'">已查</button>'+
       '</div>'+
     '</div>';
   });
   html+='</div>';
   el.innerHTML=html; el.classList.remove("hidden");
-  // 查看：跳转到对应卡片 + 高亮改过的字段 + 标为已读，不进入编辑态。
-  // 顺序很关键：先滚动定位（此时列表还是旧的，滚动不被打断），
-  // 再后台标已读，最后只重渲染顶部提示区，刷新未读数。
+  // 查看：跳转到对应卡片 + 高亮改过的字段（只读，不改变「待看」状态）。
+  // 注意顺序：先滚动定位（此时列表还是旧的，滚动不被打断），
+  // 之后由「已查 / 全部已查」写已读并重渲染顶部，刷新待看条数。
   $$('#clientEdits [data-ce]').forEach(b=>b.addEventListener('click',()=>{
     const id=b.dataset.ce, s=sessions.find(x=>x.id===id);
-    const ks=s?fieldChanges(s):[];
-    focusField(id, ks);
-    markSeen(id).then(()=>{ renderClientEdits(); });
+    focusField(id, s?fieldChanges(s):[]);   // 只跳过去看 + 高亮，不改变「待看」状态
   }));
+  // 已查：看过了 → 从顶部收起（写 coach_seen_at；客户之后再改会自动重新出现）
+  $$('#clientEdits [data-ceclear]').forEach(b=>b.addEventListener('click',()=>{
+    markSeen(b.dataset.ceclear).then(()=>{ renderClientEdits(); });
+  }));
+  // 全部已查：一次把顶部这些全收起
+  const clearAllBtn=$("#ceClearAll");
+  if(clearAllBtn)clearAllBtn.addEventListener('click',()=>{
+    Promise.all(list.map(s=>markSeen(s.id))).then(()=>{ renderClientEdits(); });
+  });
   // 编辑：只有真的要改时才进编辑态
   $$('#clientEdits [data-cee]').forEach(b=>b.addEventListener('click',()=>editSession(b.dataset.cee)));
 }
@@ -1259,6 +1284,7 @@ async function markSeen(id){
   const s=sessions.find(x=>x.id===id);
   if(!s||!IS_COACH())return;
   s.coach_seen_at=new Date().toISOString();
+  s._seenLocal=true;   // 本地先按已读处理，避免时钟差导致「点了没反应」
   try{ await sbUpdate(id,{coach_seen_at:s.coach_seen_at}); }catch(e){}
 }
 
